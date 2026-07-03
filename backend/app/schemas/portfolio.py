@@ -12,3 +12,4 @@ class PortfolioSummary(BaseModel):
     drawdown_pct: float
     num_positions: int
     num_open_orders: int
+    currency: str = "USD"

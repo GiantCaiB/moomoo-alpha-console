@@ -1,0 +1,342 @@
+2026-07-03 20:48:16 | INFO    | watchfiles.main | 1 change detected
+2026-07-03 20:48:16 | INFO    | app.main | Starting Moomoo Alpha Console (broker_mode=mock)
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("symbols")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("watchlist_items")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("bars_1d")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("signals")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("signal_scores")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("strategy_runs")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("positions")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("orders")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("fills")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("portfolio_snapshots")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("risk_events")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("trade_journal_entries")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("app_settings")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | PRAGMA temp.table_info("audit_logs")
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE symbols (
+	ticker VARCHAR(10) NOT NULL, 
+	name VARCHAR(255), 
+	asset_type VARCHAR(20) NOT NULL, 
+	is_active BOOLEAN NOT NULL, 
+	exchange VARCHAR(50), 
+	currency VARCHAR(3) NOT NULL, 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-03 20:48:16 | INFO    | sqlalchemy.engine.Engine | [no key 0.00018s] ()
+2026-07-03 20:48:17 | INFO    | watchfiles.main | 3 changes detected
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | CREATE UNIQUE INDEX ix_symbols_ticker ON symbols (ticker)
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00094s] ()
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE watchlist_items (
+	symbol VARCHAR(10) NOT NULL, 
+	list_name VARCHAR(50) NOT NULL, 
+	sort_order INTEGER NOT NULL, 
+	notes VARCHAR(500), 
+	added_price FLOAT, 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00043s] ()
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | CREATE INDEX ix_watchlist_items_symbol ON watchlist_items (symbol)
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00082s] ()
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE bars_1d (
+	symbol VARCHAR(10) NOT NULL, 
+	bar_date DATE NOT NULL, 
+	open FLOAT NOT NULL, 
+	high FLOAT NOT NULL, 
+	low FLOAT NOT NULL, 
+	close FLOAT NOT NULL, 
+	volume FLOAT NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	id CHAR(36) NOT NULL, 
+	PRIMARY KEY (id), 
+	CONSTRAINT uq_symbol_date UNIQUE (symbol, bar_date)
+)
+
+
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00027s] ()
+2026-07-03 20:48:17 | INFO    | watchfiles.main | 4 changes detected
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | CREATE INDEX ix_bars_1d_symbol ON bars_1d (symbol)
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00051s] ()
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE strategy_runs (
+	strategy_name VARCHAR(100) NOT NULL, 
+	status VARCHAR(20) NOT NULL, 
+	symbols_screened INTEGER NOT NULL, 
+	signals_generated INTEGER NOT NULL, 
+	started_at DATETIME NOT NULL, 
+	completed_at DATETIME, 
+	error TEXT, 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00076s] ()
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE positions (
+	symbol VARCHAR(10) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	avg_cost FLOAT NOT NULL, 
+	current_price FLOAT, 
+	stop_level FLOAT, 
+	unrealized_pnl FLOAT, 
+	day_pnl FLOAT, 
+	position_pct FLOAT, 
+	status VARCHAR(20) NOT NULL, 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00060s] ()
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | CREATE UNIQUE INDEX ix_positions_symbol ON positions (symbol)
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00029s] ()
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE portfolio_snapshots (
+	snapshot_time DATETIME NOT NULL, 
+	total_value FLOAT NOT NULL, 
+	cash FLOAT NOT NULL, 
+	positions_value FLOAT NOT NULL, 
+	day_pnl FLOAT NOT NULL, 
+	total_pnl FLOAT NOT NULL, 
+	day_pnl_pct FLOAT NOT NULL, 
+	total_pnl_pct FLOAT NOT NULL, 
+	drawdown_pct FLOAT NOT NULL, 
+	id CHAR(36) NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00083s] ()
+2026-07-03 20:48:17 | INFO    | watchfiles.main | 4 changes detected
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE risk_events (
+	event_type VARCHAR(50) NOT NULL, 
+	severity VARCHAR(20) NOT NULL, 
+	symbol VARCHAR(10), 
+	message TEXT NOT NULL, 
+	details TEXT, 
+	blocked BOOLEAN NOT NULL, 
+	event_time DATETIME NOT NULL, 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00038s] ()
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE trade_journal_entries (
+	symbol VARCHAR(10) NOT NULL, 
+	side VARCHAR(4) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	entry_price FLOAT NOT NULL, 
+	exit_price FLOAT, 
+	pnl FLOAT, 
+	pnl_pct FLOAT, 
+	entry_date DATETIME NOT NULL, 
+	exit_date DATETIME, 
+	strategy VARCHAR(100), 
+	notes TEXT, 
+	tags VARCHAR(500), 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-03 20:48:17 | INFO    | sqlalchemy.engine.Engine | [no key 0.00047s] ()
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE app_settings (
+	"key" VARCHAR(100) NOT NULL, 
+	value TEXT NOT NULL, 
+	description VARCHAR(500), 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id), 
+	UNIQUE ("key")
+)
+
+
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00045s] ()
+2026-07-03 20:48:18 | INFO    | watchfiles.main | 4 changes detected
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE audit_logs (
+	action VARCHAR(100) NOT NULL, 
+	entity_type VARCHAR(50) NOT NULL, 
+	entity_id VARCHAR(36), 
+	details TEXT, 
+	actor VARCHAR(50) NOT NULL, 
+	ip_address VARCHAR(50), 
+	timestamp DATETIME NOT NULL, 
+	id CHAR(36) NOT NULL, 
+	PRIMARY KEY (id)
+)
+
+
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00021s] ()
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE signals (
+	strategy_run_id VARCHAR(36), 
+	symbol VARCHAR(10) NOT NULL, 
+	verdict VARCHAR(20) NOT NULL, 
+	total_score FLOAT NOT NULL, 
+	reason TEXT, 
+	entry_min FLOAT, 
+	entry_max FLOAT, 
+	stop_level FLOAT, 
+	target_size_pct FLOAT, 
+	risk_amount FLOAT, 
+	invalidation TEXT, 
+	current_price FLOAT, 
+	approved BOOLEAN, 
+	signal_date DATETIME NOT NULL, 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(strategy_run_id) REFERENCES strategy_runs (id)
+)
+
+
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00027s] ()
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | CREATE INDEX ix_signals_symbol ON signals (symbol)
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00048s] ()
+2026-07-03 20:48:18 | INFO    | watchfiles.main | 5 changes detected
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE signal_scores (
+	signal_id VARCHAR(36) NOT NULL, 
+	category VARCHAR(50) NOT NULL, 
+	score FLOAT NOT NULL, 
+	max_score FLOAT NOT NULL, 
+	details VARCHAR, 
+	id CHAR(36) NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(signal_id) REFERENCES signals (id)
+)
+
+
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00030s] ()
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | CREATE INDEX ix_signal_scores_signal_id ON signal_scores (signal_id)
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00027s] ()
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE orders (
+	symbol VARCHAR(10) NOT NULL, 
+	side VARCHAR(4) NOT NULL, 
+	order_type VARCHAR(10) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	filled_quantity INTEGER NOT NULL, 
+	limit_price FLOAT, 
+	stop_price FLOAT, 
+	status VARCHAR(20) NOT NULL, 
+	reason TEXT, 
+	broker_order_id VARCHAR(100), 
+	signal_id VARCHAR(36), 
+	risk_check_passed BOOLEAN, 
+	risk_details TEXT, 
+	submitted_at DATETIME, 
+	filled_at DATETIME, 
+	cancelled_at DATETIME, 
+	notes TEXT, 
+	id CHAR(36) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(signal_id) REFERENCES signals (id)
+)
+
+
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00029s] ()
+2026-07-03 20:48:18 | INFO    | watchfiles.main | 5 changes detected
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | CREATE INDEX ix_orders_symbol ON orders (symbol)
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00023s] ()
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | 
+CREATE TABLE fills (
+	order_id VARCHAR(36) NOT NULL, 
+	symbol VARCHAR(10) NOT NULL, 
+	side VARCHAR(4) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	price FLOAT NOT NULL, 
+	commission FLOAT NOT NULL, 
+	fill_time DATETIME NOT NULL, 
+	id CHAR(36) NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(order_id) REFERENCES orders (id)
+)
+
+
+2026-07-03 20:48:18 | INFO    | sqlalchemy.engine.Engine | [no key 0.00082s] ()
+2026-07-03 20:48:19 | INFO    | sqlalchemy.engine.Engine | CREATE INDEX ix_fills_order_id ON fills (order_id)
+2026-07-03 20:48:19 | INFO    | sqlalchemy.engine.Engine | [no key 0.00038s] ()
+2026-07-03 20:48:19 | INFO    | watchfiles.main | 4 changes detected
+2026-07-03 20:48:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-03 20:48:19 | INFO    | app.main | Broker initialized: MockBrokerAdapter
+2026-07-03 20:48:19 | INFO    | app.workers.scheduler | Scheduler configured with 5 jobs
+2026-07-03 20:48:19 | INFO    | app.workers.scheduler | Scheduler started
+2026-07-03 20:48:19 | INFO    | watchfiles.main | 3 changes detected
+2026-07-03 20:48:27 | INFO    | watchfiles.main | 1 change detected
+2026-07-03 20:48:30 | INFO    | app.workers.scheduler | Scheduler stopped
+2026-07-03 20:48:30 | INFO    | app.main | Application shutdown complete

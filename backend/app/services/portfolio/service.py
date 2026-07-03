@@ -20,4 +20,5 @@ async def get_portfolio_summary(broker: BrokerAdapter) -> dict:
         "drawdown_pct": account.drawdown_pct,
         "num_positions": len(positions),
         "num_open_orders": len(open_orders),
+        "currency": account.currency,
     }

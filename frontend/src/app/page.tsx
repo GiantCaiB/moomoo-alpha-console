@@ -2,9 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useBrokerHealth } from "@/app/providers";
 import GlassyCard from "@/components/shared/GlassyCard";
 import StatusBadge from "@/components/shared/StatusBadge";
 import PriceDisplay from "@/components/shared/PriceDisplay";
+import {
+  formatMoney,
+  formatPercent,
+  formatQuantity,
+  formatPrice,
+} from "@/lib/format";
 import {
   TrendingUp,
   TrendingDown,
@@ -12,13 +19,17 @@ import {
   Activity,
   Shield,
   AlertTriangle,
-  Zap,
   BarChart3,
+  Database,
+  Eye,
+  FlaskConical,
 } from "lucide-react";
 import { useEffect } from "react";
 import { wsClient } from "@/lib/websocket";
 
 export default function Dashboard() {
+  const { health, isLoading: healthLoading } = useBrokerHealth();
+
   const { data: portfolio, isLoading: portLoading } = useQuery({
     queryKey: ["portfolio"],
     queryFn: api.portfolio,
@@ -49,16 +60,73 @@ export default function Dashboard() {
     return () => wsClient.disconnect();
   }, []);
 
-  const activeSignals =
+  const rawActiveSignals =
     signals?.filter((s) => s.verdict === "BUY_STARTER" && s.approved !== false) || [];
+  const activeSignals = (() => {
+    const latestBySymbol = new Map<string, (typeof rawActiveSignals)[number]>();
+    for (const sig of rawActiveSignals) {
+      const existing = latestBySymbol.get(sig.symbol);
+      if (!existing || new Date(sig.created_at) > new Date(existing.created_at)) {
+        latestBySymbol.set(sig.symbol, sig);
+      }
+    }
+    return Array.from(latestBySymbol.values());
+  })();
   const openOrders = orders?.filter((o) => o.status === "PENDING" || o.status === "SUBMITTED") || [];
 
-  const isUp = (portfolio?.day_pnl_pct ?? 0) >= 0;
   const isDayUp = (portfolio?.day_pnl ?? 0) >= 0;
-  const isTotalUp = (portfolio?.total_pnl ?? 0) >= 0;
+
+  const env = health?.account_environment ?? "mock";
+  const isMoomooReal = env === "moomoo_real";
+  const isMoomooSim = env === "moomoo_simulate";
+  const isMoomoo = env.startsWith("moomoo");
+  const isPaper = env === "paper";
+  const isMock = env === "mock";
+  const connected = health?.connected ?? true;
+
+  const bannerData = (() => {
+    if (isMoomooReal && connected) {
+      return {
+        text: "MOOMOO REAL READ-ONLY — Real moomoo account data shown. Live trading disabled.",
+        icon: Database,
+        className: "bg-accent-amber/10 border-accent-amber/30 text-accent-amber",
+      };
+    }
+    if (isMoomooSim && connected) {
+      return {
+        text: "MOOMOO SIMULATE READ-ONLY — Moomoo simulated account data shown. Live trading disabled.",
+        icon: Eye,
+        className: "bg-accent-blue/10 border-accent-blue/30 text-accent-blue",
+      };
+    }
+    if (isMoomoo && !connected) {
+      return {
+        text: "MOOMOO DISCONNECTED — Check OpenD connection. Account data unavailable.",
+        icon: AlertTriangle,
+        className: "bg-accent-red/10 border-accent-red/30 text-accent-red",
+      };
+    }
+    if (isPaper) {
+      return {
+        text: "PAPER MODE — Simulated local paper trading only.",
+        icon: FlaskConical,
+        className: "bg-accent-purple/10 border-accent-purple/30 text-accent-purple",
+      };
+    }
+    return null;
+  })();
 
   return (
     <div>
+      {bannerData && (
+        <div
+          className={`mb-4 px-4 py-2.5 rounded-lg border flex items-center gap-2 text-sm font-medium ${bannerData.className}`}
+        >
+          <bannerData.icon size={18} />
+          <span>{bannerData.text}</span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-text-primary">Dashboard</h2>
@@ -70,11 +138,11 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 text-xs">
             <span
               className={`status-dot ${
-                risk?.broker_connected ? "status-dot-green" : "status-dot-red"
+                connected ? "status-dot-green" : "status-dot-red"
               }`}
             />
             <span className="text-text-secondary">
-              {risk?.broker_connected ? "Connected" : "Disconnected"}
+              {connected ? "Connected" : "Disconnected"}
             </span>
           </div>
           {risk?.kill_switch_enabled && (
@@ -87,17 +155,27 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <GlassyCard neon="green">
+        <GlassyCard neon={isMoomooReal ? "green" : "none"}>
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs text-text-muted uppercase tracking-wider mb-1">
                 Portfolio Value
+                {isMoomooReal && (
+                  <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent-green/20 text-accent-green border border-accent-green/30">
+                    REAL
+                  </span>
+                )}
+                {isMoomooSim && (
+                  <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent-blue/20 text-accent-blue border border-accent-blue/30">
+                    SIM
+                  </span>
+                )}
               </p>
               {portLoading ? (
                 <div className="h-7 w-28 bg-surface-hover animate-pulse rounded" />
               ) : (
                 <p className="text-2xl font-bold font-mono text-text-primary">
-                  <PriceDisplay value={portfolio?.total_value} prefix="$" />
+                  {formatMoney(portfolio?.total_value, portfolio?.currency)}
                 </p>
               )}
             </div>
@@ -120,14 +198,14 @@ export default function Dashboard() {
                       isDayUp ? "value-up" : "value-down"
                     }`}
                   >
-                    <PriceDisplay value={portfolio?.day_pnl} prefix="$" colorize />
+                    {formatMoney(portfolio?.day_pnl)}
                   </p>
                   <span
                     className={`text-sm font-mono ${
-                      isUp ? "value-up" : "value-down"
+                      isDayUp ? "value-up" : "value-down"
                     }`}
                   >
-                    <PriceDisplay value={portfolio?.day_pnl_pct} suffix="%" colorize />
+                    {formatPercent(portfolio?.day_pnl_pct)}
                   </span>
                 </div>
               )}
@@ -150,7 +228,7 @@ export default function Dashboard() {
                 <div className="h-7 w-28 bg-surface-hover animate-pulse rounded" />
               ) : (
                 <p className="text-2xl font-bold font-mono text-text-primary">
-                  <PriceDisplay value={portfolio?.cash} prefix="$" />
+                  {formatMoney(portfolio?.cash, portfolio?.currency)}
                 </p>
               )}
             </div>
@@ -175,7 +253,7 @@ export default function Dashboard() {
                         : "text-text-primary"
                     }`}
                   >
-                    <PriceDisplay value={portfolio?.drawdown_pct} suffix="%" />
+                    {formatPercent(portfolio?.drawdown_pct)}
                   </p>
                 </div>
               )}
@@ -252,7 +330,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div className="text-xs text-text-muted font-mono">
-                      {o.quantity} @ <PriceDisplay value={o.limit_price} prefix="$" />
+                      {formatQuantity(o.quantity)} @ {formatPrice(o.limit_price)}
                     </div>
                   </div>
                 ))}
@@ -277,13 +355,13 @@ export default function Dashboard() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-secondary">Daily Loss</span>
                 <span className="font-mono text-xs text-text-primary">
-                  <PriceDisplay value={risk?.daily_loss_pct} suffix="%" />
+                  {formatPercent(risk?.daily_loss_pct)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-text-secondary">Drawdown</span>
                 <span className="font-mono text-xs text-text-primary">
-                  <PriceDisplay value={risk?.drawdown_pct} suffix="%" />
+                  {formatPercent(risk?.drawdown_pct)}
                 </span>
               </div>
             </div>
@@ -292,59 +370,62 @@ export default function Dashboard() {
       </div>
 
       <GlassyCard title="Recent Positions">
-        {positions && positions.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-text-muted text-xs uppercase tracking-wider border-b border-surface-border">
-                  <th className="text-left py-2 pr-4">Symbol</th>
-                  <th className="text-right py-2 pr-4">Qty</th>
-                  <th className="text-right py-2 pr-4">Avg Cost</th>
-                  <th className="text-right py-2 pr-4">Price</th>
-                  <th className="text-right py-2 pr-4">Unrealized P&L</th>
-                  <th className="text-right py-2 pr-4">% of Portfolio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {positions.map((pos) => (
-                  <tr
-                    key={pos.id}
-                    className="border-b border-surface-border/50 hover:bg-surface-hover/30"
-                  >
-                    <td className="py-2.5 pr-4 font-mono font-medium">
-                      {pos.symbol}
-                    </td>
-                    <td className="py-2.5 pr-4 text-right font-mono">
-                      {pos.quantity}
-                    </td>
-                    <td className="py-2.5 pr-4 text-right font-mono">
-                      <PriceDisplay value={pos.avg_cost} prefix="$" />
-                    </td>
-                    <td className="py-2.5 pr-4 text-right font-mono">
-                      <PriceDisplay value={pos.current_price} prefix="$" />
-                    </td>
-                    <td
-                      className={`py-2.5 pr-4 text-right font-mono ${
-                        (pos.unrealized_pnl ?? 0) >= 0
-                          ? "value-up"
-                          : "value-down"
-                      }`}
-                    >
-                      <PriceDisplay value={pos.unrealized_pnl} prefix="$" />
-                    </td>
-                    <td className="py-2.5 text-right font-mono text-text-secondary">
-                      <PriceDisplay value={pos.position_pct} suffix="%" />
-                    </td>
+        {(() => {
+          const activePositions = positions?.filter((p) => (p.quantity ?? 0) > 0) ?? [];
+          return activePositions.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-text-muted text-xs uppercase tracking-wider border-b border-surface-border">
+                    <th className="text-left py-2 pr-4">Symbol</th>
+                    <th className="text-right py-2 pr-4">Qty</th>
+                    <th className="text-right py-2 pr-4">Avg Cost</th>
+                    <th className="text-right py-2 pr-4">Price</th>
+                    <th className="text-right py-2 pr-4">Unrealized P&L</th>
+                    <th className="text-right py-2 pr-4">% of Portfolio</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-sm text-text-muted py-4 text-center">
-            No positions
-          </p>
-        )}
+                </thead>
+                <tbody>
+                  {activePositions.map((pos) => (
+                    <tr
+                      key={pos.id}
+                      className="border-b border-surface-border/50 hover:bg-surface-hover/30"
+                    >
+                      <td className="py-2.5 pr-4 font-mono font-medium">
+                        {pos.symbol}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right font-mono">
+                        {formatQuantity(pos.quantity)}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right font-mono">
+                        {formatPrice(pos.avg_cost)}
+                      </td>
+                      <td className="py-2.5 pr-4 text-right font-mono">
+                        {formatPrice(pos.current_price)}
+                      </td>
+                      <td
+                        className={`py-2.5 pr-4 text-right font-mono ${
+                          (pos.unrealized_pnl ?? 0) >= 0
+                            ? "value-up"
+                            : "value-down"
+                        }`}
+                      >
+                        {formatMoney(pos.unrealized_pnl)}
+                      </td>
+                      <td className="py-2.5 text-right font-mono text-text-secondary">
+                        {formatPercent(pos.position_pct)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted py-4 text-center">
+              No positions
+            </p>
+          );
+        })()}
       </GlassyCard>
     </div>
   );

@@ -25,6 +25,9 @@ dev = [
     "ruff>=0.6.0",
     "mypy>=1.11.0",
 ]
+moomoo = [
+    "moomoo-api>=10.8.0",
+]
 
 [tool.ruff]
 target-version = "py312"

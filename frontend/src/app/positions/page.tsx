@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { formatPercent } from "@/lib/format";
 import GlassyCard from "@/components/shared/GlassyCard";
 import PriceDisplay from "@/components/shared/PriceDisplay";
 
@@ -16,18 +17,20 @@ export default function PositionsPage() {
     queryFn: api.portfolio,
   });
 
+  const activePositions = positions?.filter((p) => (p.quantity ?? 0) > 0) ?? [];
+
   return (
     <div>
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-text-primary">Positions</h2>
         <p className="text-sm text-text-muted mt-1">
-          Current open positions ({positions?.length || 0})
+          Current open positions ({activePositions.length})
         </p>
       </div>
 
       {isLoading ? (
         <div className="h-40 bg-surface-hover animate-pulse rounded-xl" />
-      ) : positions && positions.length > 0 ? (
+      ) : activePositions.length > 0 ? (
         <GlassyCard>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -44,7 +47,7 @@ export default function PositionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {positions.map((pos) => (
+                {activePositions.map((pos) => (
                   <tr
                     key={pos.id}
                     className="border-b border-surface-border/30 hover:bg-surface-hover/30 transition-colors"
@@ -81,7 +84,7 @@ export default function PositionsPage() {
                       <PriceDisplay value={pos.stop_level} prefix="$" />
                     </td>
                     <td className="py-3 text-right font-mono text-text-secondary">
-                      <PriceDisplay value={pos.position_pct} suffix="%" />
+                      {formatPercent(pos.position_pct)}
                     </td>
                   </tr>
                 ))}

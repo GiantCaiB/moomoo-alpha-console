@@ -3,7 +3,7 @@ import { clsx } from "clsx";
 interface GlassyCardProps {
   children: React.ReactNode;
   className?: string;
-  neon?: "green" | "red" | "none";
+  neon?: "green" | "red" | "amber" | "none";
   title?: string;
   action?: React.ReactNode;
 }
@@ -21,6 +21,7 @@ export default function GlassyCard({
         "glassy p-5",
         neon === "green" && "neon-border",
         neon === "red" && "neon-border-red",
+        neon === "amber" && "neon-border-amber",
         className
       )}
     >

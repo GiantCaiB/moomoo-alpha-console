@@ -38,6 +38,11 @@ body {
     box-shadow: 0 0 10px rgba(255, 23, 68, 0.08);
   }
 
+  .neon-border-amber {
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.08);
+  }
+
   .status-dot {
     width: 8px;
     height: 8px;

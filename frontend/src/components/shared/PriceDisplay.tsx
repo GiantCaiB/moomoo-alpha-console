@@ -21,21 +21,20 @@ export default function PriceDisplay({
     return <span className="text-text-muted">--</span>;
   }
 
-  const formatted = value.toFixed(decimals);
-  const isPositive = value > 0;
   const isNegative = value < 0;
 
   return (
     <span
       className={clsx(
         "font-mono tabular-nums",
-        colorize && isPositive && "value-up",
+        colorize && value > 0 && "value-up",
         colorize && isNegative && "value-down",
         className
       )}
     >
       {prefix}
-      {isNegative && "-"}${Math.abs(Number(formatted)).toFixed(decimals)}
+      {isNegative && "-"}
+      {Math.abs(value).toFixed(decimals)}
       {suffix}
     </span>
   );

@@ -2,15 +2,19 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { isReadOnlyMode } from "@/lib/readonly";
+import { useBrokerHealth } from "@/app/providers";
 import GlassyCard from "@/components/shared/GlassyCard";
 import PriceDisplay from "@/components/shared/PriceDisplay";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { useState } from "react";
-import { Play, CheckCircle, XCircle, Info } from "lucide-react";
+import { Play, Info, ShieldBan } from "lucide-react";
 
 export default function SignalsPage() {
   const queryClient = useQueryClient();
   const [selectedSignal, setSelectedSignal] = useState<string | null>(null);
+  const { health } = useBrokerHealth();
+  const readOnly = isReadOnlyMode(health);
 
   const { data: signals, isLoading } = useQuery({
     queryKey: ["signals"],
@@ -49,6 +53,13 @@ export default function SignalsPage() {
           {runMutation.isPending ? "Running..." : "Run Screener"}
         </button>
       </div>
+
+      {readOnly && (
+        <div className="mb-4 px-4 py-2 rounded-lg bg-accent-amber/10 border border-accent-amber/30 text-accent-amber text-sm flex items-center gap-2">
+          <ShieldBan size={16} />
+          Signals are research only. Order approval is disabled in read-only mode.
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4">

@@ -32,6 +32,7 @@ export interface PortfolioSummary {
   drawdown_pct: number;
   num_positions: number;
   num_open_orders: number;
+  currency: string;
 }
 
 export interface PositionResponse {
@@ -142,4 +143,19 @@ export interface Quote {
   last: number | null;
   change: number | null;
   change_pct: number | null;
+}
+
+export interface BrokerHealthResponse {
+  broker_mode: string;
+  connected: boolean;
+  data_source: string;
+  account_environment: string;
+  is_real_account_data: boolean;
+  is_live_trading_enabled: boolean;
+  read_only: boolean;
+  opend_host: string;
+  opend_port: number;
+  trd_env: string;
+  warnings: string[];
+  error: string | null;
 }

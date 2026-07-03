@@ -1,20 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from fastapi import APIRouter, Depends
 
 from app.schemas.position import PositionResponse
-from app.models.position import Position
-from app.db.session import get_session
+from app.services.broker.base import BrokerAdapter
+from app.api.dependencies import get_broker
 
 router = APIRouter()
 
 
 @router.get("/api/v1/positions", response_model=list[PositionResponse])
-async def list_positions(session: AsyncSession = Depends(get_session)):
-    result = await session.execute(select(Position).where(Position.status == "OPEN"))
-    positions = result.scalars().all()
+async def list_positions(broker: BrokerAdapter = Depends(get_broker)):
+    positions = await broker.get_positions()
     return [PositionResponse(
-        id=p.id,
+        id=p.symbol,
         symbol=p.symbol,
         quantity=p.quantity,
         avg_cost=p.avg_cost,

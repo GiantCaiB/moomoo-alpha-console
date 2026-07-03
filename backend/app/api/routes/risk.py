@@ -8,6 +8,7 @@ from app.models.risk_event import RiskEvent
 from app.db.session import get_session
 from app.services.risk.engine import RiskEngine
 from app.services.broker.base import BrokerAdapter
+from app.services.broker.safety import compute_broker_safety_state
 from app.api.dependencies import get_risk_engine, get_broker
 
 router = APIRouter()
@@ -22,7 +23,8 @@ async def risk_status(
     session: AsyncSession = Depends(get_session),
 ):
     account = await broker.get_account()
-    health = await broker.health_check()
+    bh = await broker.health_check()
+    safety = compute_broker_safety_state(bh)
 
     recent_events_result = await session.execute(
         select(RiskEvent).order_by(desc(RiskEvent.event_time)).limit(RECENT_EVENT_LIMIT)
@@ -32,9 +34,16 @@ async def risk_status(
     daily_loss_pct = abs(min(account.day_pnl_pct, 0))
     dd = account.drawdown_pct
 
+    trading_blocked = (
+        risk_engine.kill_switch_enabled
+        or not safety["connected"]
+        or safety["read_only"]
+        or not safety["is_live_trading_enabled"]
+    )
+
     return RiskStatusResponse(
         kill_switch_enabled=risk_engine.kill_switch_enabled,
-        broker_connected=health.connected,
+        broker_connected=safety["connected"],
         daily_loss_pct=daily_loss_pct,
         drawdown_pct=dd,
         daily_loss_limit_pct=5.0,
@@ -49,7 +58,7 @@ async def risk_status(
              "event_time": e.event_time.isoformat()}
             for e in events
         ],
-        trading_blocked=risk_engine.kill_switch_enabled or not health.connected,
+        trading_blocked=trading_blocked,
     )
 
 

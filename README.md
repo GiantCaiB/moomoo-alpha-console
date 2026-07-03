@@ -9,7 +9,7 @@ A local-first, long-running trading dashboard for US stock swing trading, built 
 
 ## What It Does
 
-- Connects to moomoo OpenD for market data and trading (safely skelletoned in MVP — real integration TBD)
+- Connects to moomoo OpenD for read-only account display — positions, portfolio, open orders, and quotes
 - Displays portfolio value, positions, orders, and risk status in a dark-themed dashboard
 - Generates deterministic swing-trading signals using a Momentum + Relative Strength screener
 - Enforces hard risk controls before any order can be placed
@@ -83,16 +83,33 @@ Set `BROKER_MODE` in `.env` or as an environment variable.
 |---|---|
 | `mock` | **(Default)** Fully local mock data. No external dependencies. All data is synthetic. |
 | `paper` | Paper trading. Uses mock market data but records orders, fills, and trade log for simulated P&L tracking. |
-| `moomoo` | Real moomoo OpenD connection. **Requires OpenD running locally.** Will not place orders unless `TRADING_ENABLED=true`. |
+| `moomoo` | Real moomoo OpenD connection. **Requires OpenD running locally.** Read-only display only — all write operations are blocked regardless of `TRADING_ENABLED`. |
 
-### How to Prepare for Moomoo OpenD Integration
+### Moomoo Read-Only Mode (Phase 2A)
 
-1. Download and run [Futu OpenD](https://www.futunn.com/opend/)
-2. Ensure OpenD is running on `127.0.0.1:11111` (configurable)
-3. Set `BROKER_MODE=moomoo` in `.env`
-4. The `MoomooBrokerAdapter` contains TODO comments for each unimplemented method
-5. Unlock your trade password via OpenD before trading
-6. Set `TRADING_ENABLED=true` ONLY after paper testing is complete
+The moomoo adapter connects to OpenD and reads real account data without placing orders.
+
+1. Install moomoo SDK: `pip install -e ".[moomoo]"` (installs `moomoo-api`)
+2. Download and run [Futu OpenD](https://www.futunn.com/opend/) on `127.0.0.1:11111`
+3. Unlock your trade password in OpenD
+4. Configure environment variables:
+
+```bash
+BROKER_MODE=moomoo
+MOOMOO_HOST=127.0.0.1
+MOOMOO_PORT=11111
+MOOMOO_TRD_ENV=SIMULATE   # or REAL for live account view
+```
+
+The dashboard shows distinct banners and badges:
+- **Moomoo Simulate Read-Only** — reads simulated account data (no real money)
+- **Moomoo Real Read-Only** — reads real account data (display only)
+
+> **❗ Order placement and cancellation always raise `RuntimeError("Read-only mode")` in moomoo mode, regardless of `TRADING_ENABLED` setting.**
+
+`MOOMOO_TRD_ENV=SIMULATE` maps to `TrdEnv.SIMULATE` (simulated trading environment).  
+`MOOMOO_TRD_ENV=REAL` maps to `TrdEnv.REAL` (real trading environment).  
+Both are read-only in this phase.
 
 ---
 
@@ -146,6 +163,7 @@ python -m pytest tests/test_risk_engine.py -v
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/v1/health` | Health check |
+| GET | `/api/v1/broker/health` | Broker connection health |
 | GET | `/api/v1/config` | App configuration |
 | GET | `/api/v1/portfolio/summary` | Portfolio summary |
 | GET | `/api/v1/positions` | Open positions |
@@ -186,7 +204,7 @@ moomoo-alpha-console/
 │   │   ├── strategies/    # Momentum Relative Strength screener
 │   │   ├── workers/       # APScheduler jobs
 │   │   └── main.py        # FastAPI app factory
-│   ├── tests/             # pytest tests (32 tests)
+│   ├── tests/             # pytest tests (46 tests)
 │   ├── alembic.ini
 │   └── pyproject.toml
 ├── frontend/
@@ -213,7 +231,7 @@ moomoo-alpha-console/
 | Frontend MVP (Dashboard, Signals, Positions, Orders, Risk, Settings) | ✅ Done |
 | Tests (risk engine, signal scoring, broker, API) | ✅ Done |
 | Docker Compose | ✅ Done |
-| Real moomoo OpenD broker integration | ⬜ TODO |
+| Moomoo OpenD read-only display (Phase 2A) | ✅ Done |
 | WebSocket live event broadcasting | ⬜ TODO (skeleton ready) |
 | Postgres support | ⬜ TODO |
 | Redis caching | ⬜ TODO |

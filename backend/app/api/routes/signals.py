@@ -13,11 +13,24 @@ router = APIRouter()
 
 
 @router.get("/api/v1/signals", response_model=list[SignalResponse])
-async def list_signals(session: AsyncSession = Depends(get_session)):
+async def list_signals(
+    include_history: bool = False,
+    session: AsyncSession = Depends(get_session),
+):
     result = await session.execute(
         select(Signal).order_by(Signal.created_at.desc()).limit(50)
     )
     signals = result.scalars().all()
+
+    if not include_history:
+        seen: set[str] = set()
+        deduped: list[Signal] = []
+        for sig in signals:
+            if sig.symbol not in seen:
+                seen.add(sig.symbol)
+                deduped.append(sig)
+        signals = deduped
+
     responses = []
     for sig in signals:
         score_result = await session.execute(

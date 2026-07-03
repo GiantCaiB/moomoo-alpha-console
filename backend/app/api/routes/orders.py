@@ -1,4 +1,4 @@
-import json
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -11,6 +11,7 @@ from app.models.order import Order
 from app.db.session import get_session
 from app.services.execution.order_service import preview_order, approve_order, cancel_existing_order
 from app.services.broker.base import BrokerAdapter
+from app.services.broker.safety import compute_broker_safety_state
 from app.services.risk.engine import RiskEngine
 from app.api.dependencies import get_broker, get_risk_engine
 
@@ -18,19 +19,18 @@ router = APIRouter()
 
 
 @router.get("/api/v1/orders", response_model=list[OrderResponse])
-async def list_orders(session: AsyncSession = Depends(get_session)):
-    result = await session.execute(select(Order).order_by(Order.created_at.desc()))
-    orders = result.scalars().all()
+async def list_orders(broker: BrokerAdapter = Depends(get_broker)):
+    orders = await broker.get_open_orders()
     return [OrderResponse(
-        id=o.id, symbol=o.symbol, side=o.side, order_type=o.order_type,
+        id=o.order_id, symbol=o.symbol, side=o.side, order_type=o.order_type,
         quantity=o.quantity, filled_quantity=o.filled_quantity,
         limit_price=o.limit_price, stop_price=o.stop_price,
         status=o.status, reason=o.reason,
-        risk_check_passed=o.risk_check_passed, risk_details=o.risk_details,
-        signal_id=o.signal_id,
-        created_at=o.created_at, submitted_at=o.submitted_at,
+        risk_check_passed=None, risk_details=None,
+        signal_id=None,
+        created_at=o.created_at or datetime.min, submitted_at=o.submitted_at,
         filled_at=o.filled_at, cancelled_at=o.cancelled_at,
-        notes=o.notes,
+        notes=None,
     ) for o in orders]
 
 
@@ -59,6 +59,10 @@ async def approve_order_route(
     risk_engine: RiskEngine = Depends(get_risk_engine),
     session: AsyncSession = Depends(get_session),
 ):
+    bh = await broker.health_check()
+    safety = compute_broker_safety_state(bh)
+    if safety["read_only"] or not safety["is_live_trading_enabled"]:
+        raise HTTPException(status_code=403, detail="Read-only mode: order actions are disabled.")
     result = await approve_order(
         order_id=req.order_id,
         broker=broker,
@@ -74,6 +78,10 @@ async def cancel_order_route(
     broker: BrokerAdapter = Depends(get_broker),
     session: AsyncSession = Depends(get_session),
 ):
+    bh = await broker.health_check()
+    safety = compute_broker_safety_state(bh)
+    if safety["read_only"] or not safety["is_live_trading_enabled"]:
+        raise HTTPException(status_code=403, detail="Read-only mode: order actions are disabled.")
     result = await cancel_existing_order(
         order_id=req.order_id,
         broker=broker,

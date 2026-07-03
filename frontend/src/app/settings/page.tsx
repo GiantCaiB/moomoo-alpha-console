@@ -2,13 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useBrokerHealth } from "@/app/providers";
 import GlassyCard from "@/components/shared/GlassyCard";
+import { AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 
 export default function SettingsPage() {
   const { data: config, isLoading } = useQuery({
     queryKey: ["config"],
     queryFn: api.config,
   });
+
+  const { health: brokerHealth, isLoading: bhLoading } = useBrokerHealth();
 
   return (
     <div>
@@ -50,6 +54,111 @@ export default function SettingsPage() {
                 </span>
               </div>
             </div>
+          )}
+        </GlassyCard>
+
+        <GlassyCard title="Broker Health">
+          {bhLoading ? (
+            <div className="h-20 bg-surface-hover animate-pulse rounded" />
+          ) : brokerHealth ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Status</span>
+                <div className="flex items-center gap-2">
+                  {brokerHealth.connected ? (
+                    <CheckCircle size={16} className="text-accent-green" />
+                  ) : (
+                    <XCircle size={16} className="text-accent-red" />
+                  )}
+                  <span
+                    className={`text-sm font-mono ${
+                      brokerHealth.connected
+                        ? "text-accent-green"
+                        : "text-accent-red"
+                    }`}
+                  >
+                    {brokerHealth.connected ? "Connected" : "Disconnected"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Data Source</span>
+                <span className="text-sm font-mono text-text-primary">
+                  {brokerHealth.data_source}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Account Environment</span>
+                <span className="text-sm font-mono text-text-primary">
+                  {brokerHealth.account_environment}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Real Account Data</span>
+                <span
+                  className={`text-sm font-mono ${
+                    brokerHealth.is_real_account_data
+                      ? "text-accent-green"
+                      : "text-text-muted"
+                  }`}
+                >
+                  {brokerHealth.is_real_account_data ? "YES" : "NO"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Live Trading</span>
+                <span
+                  className={`text-sm font-mono ${
+                    brokerHealth.is_live_trading_enabled
+                      ? "text-accent-red"
+                      : "text-text-muted"
+                  }`}
+                >
+                  {brokerHealth.is_live_trading_enabled ? "ENABLED" : "DISABLED"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Read-Only</span>
+                <span className="text-sm font-mono text-accent-amber">
+                  {brokerHealth.read_only ? "YES" : "NO"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">OpenD Host</span>
+                <span className="text-sm font-mono text-text-primary">
+                  {brokerHealth.opend_host}:{brokerHealth.opend_port}
+                </span>
+              </div>
+              {brokerHealth.trd_env && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-text-secondary">Trade Env</span>
+                  <span className="text-sm font-mono text-text-primary">
+                    {brokerHealth.trd_env}
+                  </span>
+                </div>
+              )}
+              {brokerHealth.warnings.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {brokerHealth.warnings.map((w, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-1.5 text-xs text-accent-amber"
+                    >
+                      <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                      <span>{w}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {brokerHealth.error && (
+                <div className="flex items-start gap-1.5 text-xs text-accent-red">
+                  <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                  <span>{brokerHealth.error}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted">No health data</p>
           )}
         </GlassyCard>
 

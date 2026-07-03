@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     opend_host: str = "127.0.0.1"
     opend_port: int = 11111
+    moomoo_host: str = "127.0.0.1"
+    moomoo_port: int = 11111
+    moomoo_market: str = "US"
+    moomoo_trd_env: str = "SIMULATE"
 
     database_url: str = "sqlite+aiosqlite:///./data/moomoo_alpha.db"
 

@@ -8,6 +8,7 @@ import type {
   RiskStatusResponse,
   WatchlistItemResponse,
   PreviewOrderResponse,
+  BrokerHealthResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8020";
@@ -76,4 +77,6 @@ export const api = {
     ),
 
   watchlist: () => fetcher<WatchlistItemResponse[]>("/api/v1/watchlist"),
+
+  brokerHealth: () => fetcher<BrokerHealthResponse>("/api/v1/broker/health"),
 };

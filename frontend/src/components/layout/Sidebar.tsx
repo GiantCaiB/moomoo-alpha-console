@@ -12,6 +12,7 @@ import {
   FlaskConical,
   Settings,
 } from "lucide-react";
+import { useBrokerHealth } from "@/app/providers";
 
 const links = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -26,6 +27,27 @@ const links = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { health } = useBrokerHealth();
+
+  const env = health?.account_environment ?? "mock";
+  const connected = health?.connected ?? true;
+
+  let modeLabel = "Mock Mode";
+  let dotClass = "status-dot-green";
+
+  if (env === "moomoo_real") {
+    modeLabel = connected ? "Moomoo Real (R/O)" : "Moomoo Disconnected";
+    dotClass = connected ? "status-dot-green" : "status-dot-red";
+  } else if (env === "moomoo_simulate") {
+    modeLabel = connected ? "Moomoo Sim (R/O)" : "Moomoo Disconnected";
+    dotClass = connected ? "status-dot-amber" : "status-dot-red";
+  } else if (env === "moomoo_disconnected") {
+    modeLabel = "Moomoo Disconnected";
+    dotClass = "status-dot-red";
+  } else if (env === "paper") {
+    modeLabel = "Paper Mode";
+    dotClass = "status-dot-amber";
+  }
 
   return (
     <aside className="w-56 h-screen glassy border-l-0 border-t-0 border-b-0 flex flex-col py-6 px-3 fixed left-0 top-0 z-40">
@@ -57,8 +79,8 @@ export default function Sidebar() {
 
       <div className="px-4 pt-4 border-t border-surface-border">
         <div className="flex items-center gap-2">
-          <span className="status-dot status-dot-green" />
-          <span className="text-xs text-text-muted">Mock Mode</span>
+          <span className={`status-dot ${dotClass}`} />
+          <span className="text-xs text-text-muted">{modeLabel}</span>
         </div>
       </div>
     </aside>

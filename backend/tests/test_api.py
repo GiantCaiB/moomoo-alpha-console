@@ -2,7 +2,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.db.session import init_db
+from app.db.session import init_db, create_session_factory
+from app.models.order import Order
 
 
 @pytest.fixture
@@ -17,7 +18,8 @@ async def test_health_endpoint(client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "ok"
-    assert data["broker_mode"] == "mock"
+    assert "broker_mode" in data
+    assert "database_ok" in data
 
 
 @pytest.mark.asyncio
@@ -104,3 +106,62 @@ async def test_order_preview_blocked_when_kill_switch(client):
     data = resp.json()
     assert data["allowed"] is False
     await client.post("/api/v1/risk/kill-switch", json={"enabled": False})
+
+
+@pytest.mark.asyncio
+async def test_broker_health_endpoint(client):
+    resp = await client.get("/api/v1/broker/health")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "broker_mode" in data
+    assert "connected" in data
+    assert "data_source" in data
+    assert "account_environment" in data
+    assert "is_real_account_data" in data
+    assert "is_live_trading_enabled" in data
+    assert "read_only" in data
+    assert isinstance(data["warnings"], list)
+    assert "data_source" in data
+    assert "account_environment" in data
+    assert "is_real_account_data" in data
+    assert "is_live_trading_enabled" in data
+    assert "read_only" in data
+    assert isinstance(data["warnings"], list)
+
+
+@pytest.mark.asyncio
+async def test_approve_order_blocked_in_read_only(client):
+    await init_db()
+    factory = create_session_factory()
+    async with factory() as session:
+        order = Order(
+            symbol="AAPL", side="BUY", order_type="LIMIT",
+            quantity=10, limit_price=210.0, status="PENDING",
+        )
+        session.add(order)
+        await session.commit()
+        order_id = order.id
+
+    resp = await client.post("/api/v1/orders/approve", json={"order_id": order_id})
+    assert resp.status_code == 403
+    data = resp.json()
+    assert "read-only" in data["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_cancel_order_blocked_in_read_only(client):
+    await init_db()
+    factory = create_session_factory()
+    async with factory() as session:
+        order = Order(
+            symbol="AAPL", side="BUY", order_type="LIMIT",
+            quantity=10, limit_price=210.0, status="PENDING",
+        )
+        session.add(order)
+        await session.commit()
+        order_id = order.id
+
+    resp = await client.post("/api/v1/orders/cancel", json={"order_id": order_id})
+    assert resp.status_code == 403
+    data = resp.json()
+    assert "read-only" in data["detail"].lower()
