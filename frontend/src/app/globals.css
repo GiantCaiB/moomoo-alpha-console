@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0f1117;
+  --card-bg: rgba(26, 29, 40, 0.8);
+  --border: rgba(45, 49, 64, 0.6);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2d3140 transparent;
+}
+
+body {
+  background-color: var(--background);
+  color: #e8eaed;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .glassy {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .neon-border {
+    border: 1px solid rgba(0, 200, 83, 0.2);
+    box-shadow: 0 0 10px rgba(0, 200, 83, 0.08);
+  }
+
+  .neon-border-red {
+    border: 1px solid rgba(255, 23, 68, 0.2);
+    box-shadow: 0 0 10px rgba(255, 23, 68, 0.08);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .status-dot-green {
+    background: #00c853;
+    box-shadow: 0 0 6px rgba(0, 200, 83, 0.5);
+  }
+
+  .status-dot-red {
+    background: #ff1744;
+    box-shadow: 0 0 6px rgba(255, 23, 68, 0.5);
+  }
+
+  .status-dot-amber {
+    background: #ffab00;
+    box-shadow: 0 0 6px rgba(255, 171, 0, 0.5);
+  }
+
+  .value-up {
+    color: #00c853;
+  }
+
+  .value-down {
+    color: #ff1744;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary
+           hover:bg-surface-hover hover:text-text-primary transition-all duration-200
+           text-sm font-medium;
+  }
+
+  .sidebar-link-active {
+    @apply bg-surface-hover text-accent-green neon-border;
+  }
+}
