@@ -4,34 +4,97 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { isReadOnlyMode } from "@/lib/readonly";
 import { useBrokerHealth } from "@/app/providers";
+import { getSourceBadge } from "@/lib/source_badge";
 import GlassyCard from "@/components/shared/GlassyCard";
 import PriceDisplay from "@/components/shared/PriceDisplay";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { useState } from "react";
-import { Play, Info, ShieldBan } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { Play, Info, ShieldBan, AlertTriangle, Trash2 } from "lucide-react";
+import type { SignalResponse } from "@/lib/types";
 
 export default function SignalsPage() {
   const queryClient = useQueryClient();
   const [selectedSignal, setSelectedSignal] = useState<string | null>(null);
+  const [runFeedback, setRunFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const { health } = useBrokerHealth();
   const readOnly = isReadOnlyMode(health);
+  const isMoomoo = health?.account_environment?.startsWith("moomoo") ?? false;
+
+  const { data: universe } = useQuery({
+    queryKey: ["trading-universe"],
+    queryFn: api.tradingUniverse,
+  });
+  const universeSymbols = universe?.symbols ?? [];
 
   const { data: signals, isLoading } = useQuery({
     queryKey: ["signals"],
-    queryFn: api.signals,
+    queryFn: () => api.signals(),
+    refetchInterval: 30000,
+  });
+
+  const { data: allSignals } = useQuery({
+    queryKey: ["signals", "include_local"],
+    queryFn: () => api.signals(true),
+    enabled: isMoomoo,
     refetchInterval: 30000,
   });
 
   const runMutation = useMutation({
     mutationFn: api.runSignals,
-    onSuccess: () => {
+    onMutate: () => setRunFeedback(null),
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["signals"] });
+      queryClient.invalidateQueries({ queryKey: ["signals", "include_local"] });
+      const parts: string[] = [];
+      parts.push(`Status: ${result.status}`);
+      if (result.signals_generated !== undefined) {
+        parts.push(`Signals: ${result.signals_generated}`);
+      }
+      if (result.data_error_count !== undefined && result.data_error_count > 0) {
+        parts.push(`Errors: ${result.data_error_count}`);
+      }
+      if (result.error) {
+        parts.push(`Detail: ${result.error}`);
+      }
+      setRunFeedback({ type: "success", message: parts.join(" | ") });
+    },
+    onError: (err: Error) => {
+      setRunFeedback({ type: "error", message: err.message });
     },
   });
 
-  const buySignals = signals?.filter((s) => s.verdict === "BUY_STARTER") || [];
-  const watchSignals = signals?.filter((s) => s.verdict === "WATCH") || [];
-  const avoidSignals = signals?.filter((s) => s.verdict === "AVOID") || [];
+  const deleteStaleMutation = useMutation({
+    mutationFn: api.deleteStaleSignals,
+    onSuccess: (result) => {
+      if (result.deleted_count > 0) {
+        queryClient.invalidateQueries({ queryKey: ["signals"] });
+        queryClient.invalidateQueries({ queryKey: ["signals", "include_local"] });
+      }
+    },
+  });
+
+  const isMoomooSignal = (s: SignalResponse) =>
+    (s.data_source === "moomoo" || s.data_source === "moomoo_snapshot_plus_yfinance_kline") &&
+    s.is_real_market_data === true &&
+    universeSymbols.includes(s.symbol);
+
+  const staleCount = useMemo(() => {
+    if (!isMoomoo || !allSignals) return 0;
+    return allSignals.filter((s) => !isMoomooSignal(s)).length;
+  }, [isMoomoo, allSignals, universeSymbols]);
+
+  const filteredSignals = useMemo(() => {
+    if (!isMoomoo || !signals) return signals;
+    return signals.filter(isMoomooSignal);
+  }, [isMoomoo, signals, universeSymbols]);
+
+  const buySignals = filteredSignals?.filter((s) => s.verdict === "BUY_STARTER" && s.data_quality_status === "OK") || [];
+  const watchSignals = filteredSignals?.filter((s) => s.verdict === "WATCH" && s.data_quality_status === "OK") || [];
+  const avoidSignals = filteredSignals?.filter((s) => s.verdict === "AVOID" && s.data_quality_status === "OK") || [];
+  const dataIssueSignals = filteredSignals?.filter((s) => s.data_quality_status !== "OK") || [];
 
   return (
     <div>
@@ -42,22 +105,72 @@ export default function SignalsPage() {
             Momentum Relative Strength Screener
           </p>
         </div>
-        <button
-          onClick={() => runMutation.mutate()}
-          disabled={runMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-green/10
-                     border border-accent-green/30 text-accent-green text-sm font-medium
-                     hover:bg-accent-green/20 transition-colors disabled:opacity-50"
-        >
-          <Play size={16} />
-          {runMutation.isPending ? "Running..." : "Run Screener"}
-        </button>
+        <div className="flex items-center gap-2">
+          {staleCount > 0 && (
+            <button
+              onClick={() => deleteStaleMutation.mutate()}
+              disabled={deleteStaleMutation.isPending}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-amber/10
+                         border border-accent-amber/30 text-accent-amber text-sm font-medium
+                         hover:bg-accent-amber/20 transition-colors disabled:opacity-50"
+            >
+              <Trash2 size={16} />
+              {deleteStaleMutation.isPending
+                ? "Clearing..."
+                : `Clear ${staleCount} stale`}
+            </button>
+          )}
+          <button
+            onClick={() => runMutation.mutate()}
+            disabled={runMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-green/10
+                       border border-accent-green/30 text-accent-green text-sm font-medium
+                       hover:bg-accent-green/20 transition-colors disabled:opacity-50"
+          >
+            <Play size={16} />
+            {runMutation.isPending ? "Running..." : "Run Screener"}
+          </button>
+        </div>
       </div>
 
       {readOnly && (
         <div className="mb-4 px-4 py-2 rounded-lg bg-accent-amber/10 border border-accent-amber/30 text-accent-amber text-sm flex items-center gap-2">
           <ShieldBan size={16} />
           Signals are research only. Order approval is disabled in read-only mode.
+        </div>
+      )}
+
+      {staleCount > 0 && (
+        <div className="mb-4 px-4 py-2 rounded-lg bg-accent-amber/10 border border-accent-amber/30 text-accent-amber text-sm flex items-center gap-2">
+          <AlertTriangle size={16} />
+          {staleCount} stale signal{staleCount !== 1 ? "s" : ""} from local/mock data hidden.{" "}
+          <button
+            onClick={() => deleteStaleMutation.mutate()}
+            className="underline font-medium hover:no-underline"
+          >
+            Clear them
+          </button>{" "}
+          or use{" "}
+          <span className="font-mono text-[11px]">include_local=true</span> to debug.
+        </div>
+      )}
+
+      {runFeedback && (
+        <div
+          className={`mb-4 px-4 py-2 rounded-lg text-sm flex items-center gap-2 ${
+            runFeedback.type === "error"
+              ? "bg-accent-red/10 border border-accent-red/30 text-accent-red"
+              : "bg-accent-green/10 border border-accent-green/30 text-accent-green"
+          }`}
+        >
+          {runFeedback.type === "error" ? <ShieldBan size={16} /> : <Info size={16} />}
+          <span className="flex-1">{runFeedback.message}</span>
+          <button
+            onClick={() => setRunFeedback(null)}
+            className="text-xs underline hover:no-underline opacity-70 hover:opacity-100"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -70,7 +183,7 @@ export default function SignalsPage() {
             />
           ))}
         </div>
-      ) : signals && signals.length > 0 ? (
+      ) : filteredSignals && filteredSignals.length > 0 ? (
         <div className="space-y-4">
           <GlassyCard title="BUY Signals">
             {buySignals.length === 0 ? (
@@ -140,12 +253,35 @@ export default function SignalsPage() {
               </div>
             )}
           </GlassyCard>
+
+          <GlassyCard title="Data Issues">
+            {dataIssueSignals.length === 0 ? (
+              <p className="text-sm text-text-muted text-center py-4">
+                No data issues
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {dataIssueSignals.map((sig) => (
+                  <SignalRow
+                    key={sig.id}
+                    sig={sig}
+                    isSelected={selectedSignal === sig.id}
+                    onToggle={() =>
+                      setSelectedSignal(
+                        selectedSignal === sig.id ? null : sig.id
+                      )
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </GlassyCard>
         </div>
       ) : (
         <GlassyCard>
           <div className="text-center py-12">
             <p className="text-text-muted text-sm mb-4">
-              No signals yet. Run the screener to generate trading candidates.
+              Run screener to generate signals from moomoo market data.
             </p>
             <button
               onClick={() => runMutation.mutate()}
@@ -172,6 +308,8 @@ function SignalRow({
   isSelected: boolean;
   onToggle: () => void;
 }) {
+  const badge = getSourceBadge(sig.data_source);
+
   return (
     <div>
       <div
@@ -180,12 +318,15 @@ function SignalRow({
                    transition-colors"
         onClick={onToggle}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="font-mono font-bold text-text-primary text-sm">
             {sig.symbol}
           </span>
           <StatusBadge status={sig.verdict} />
-          <div className="flex items-center gap-1">
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${badge.className}`}>
+            {badge.label}
+          </span>
+          <div className="flex items-center gap-1 ml-1">
             {(sig.scores || []).map((s: any) => (
               <div
                 key={s.category}
@@ -201,18 +342,41 @@ function SignalRow({
           </div>
         </div>
         <div className="flex items-center gap-4 text-xs font-mono text-text-secondary">
-          <span>
-            Score:{" "}
-            <span className="text-accent-green font-bold">
-              {sig.total_score}
+          {sig.data_quality_status === "OK" ? (
+            <span>
+              Score:{" "}
+              <span className="text-accent-green font-bold">
+                {sig.total_score}
+              </span>
             </span>
-          </span>
+          ) : (
+            <span className="text-accent-red font-bold">Data error</span>
+          )}
           <Info size={14} className="text-text-muted" />
         </div>
       </div>
 
       {isSelected && (
         <div className="mx-3 mb-2 p-4 rounded-lg bg-surface-hover/50 border border-surface-border/50">
+          {!sig.is_real_market_data && (
+            <div className="mb-3 flex items-start gap-2 p-2 rounded bg-accent-amber/10 border border-accent-amber/30 text-accent-amber text-xs">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Research signal only</p>
+                <p className="mt-0.5">Generated from local/mock data. Not tradeable in read-only mode.</p>
+              </div>
+            </div>
+          )}
+          {sig.is_real_market_data && (
+            <div className="mb-3 flex items-start gap-2 p-2 rounded bg-accent-blue/10 border border-accent-blue/30 text-accent-blue text-xs">
+              <Info size={14} className="mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Moomoo market data signal</p>
+                <p className="mt-0.5">Generated from moomoo quotes and historical kline data. Research only — not tradeable in read-only mode.</p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div>
               <p className="text-xs text-text-muted mb-1">Entry Range</p>
@@ -241,15 +405,26 @@ function SignalRow({
             </div>
           </div>
 
+          {sig.failed_filters && sig.failed_filters.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs text-text-muted mb-2">Failed Filters</p>
+              <ul className="list-disc list-inside text-sm text-text-primary space-y-1">
+                {sig.failed_filters.map((f: string) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {sig.scores && (
             <div className="mb-4">
               <p className="text-xs text-text-muted mb-2">Score Breakdown</p>
               <div className="space-y-1">
                 {sig.scores.map((s: any) => {
-                  const pct = (s.score / s.max_score) * 100;
+                  const pct = s.max_score > 0 ? (s.score / s.max_score) * 100 : 0;
                   return (
                     <div key={s.category} className="flex items-center gap-2">
-                      <span className="text-xs text-text-secondary w-32">
+                      <span className="text-xs text-text-secondary w-32 shrink-0">
                         {s.category}
                       </span>
                       <div className="flex-1 h-2 rounded-full bg-surface-border overflow-hidden">
@@ -258,15 +433,59 @@ function SignalRow({
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <span className="text-xs font-mono text-text-secondary w-16 text-right">
+                      <span className="text-xs font-mono text-text-secondary w-12 text-right shrink-0">
                         {s.score}/{s.max_score}
                       </span>
+                      {s.details && (
+                        <span className="text-[10px] text-text-muted hidden md:block max-w-[200px] truncate" title={s.details}>
+                          {s.details}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
               </div>
             </div>
           )}
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-xs">
+            <div>
+              <p className="text-text-muted mb-0.5">Strategy</p>
+              <p className="font-mono text-text-primary">{sig.strategy_name ?? "--"}</p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Data Source</p>
+              <p className="font-mono text-text-primary">{sig.data_source ?? "--"}</p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Price Source</p>
+              <p className="font-mono text-text-primary">{sig.price_source ?? "--"}</p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Bar Source</p>
+              <p className="font-mono text-text-primary">{sig.bar_source ?? "--"}</p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Generated At</p>
+              <p className="font-mono text-text-primary">
+                {sig.generated_at
+                  ? new Date(sig.generated_at).toLocaleString()
+                  : "--"}
+              </p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Real Market Data</p>
+              <p className={`font-mono ${sig.is_real_market_data ? "text-accent-green" : "text-accent-amber"}`}>
+                {sig.is_real_market_data ? "Yes" : "No"}
+              </p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Tradeable</p>
+              <p className={`font-mono ${sig.is_tradeable ? "text-accent-green" : "text-text-muted"}`}>
+                {sig.is_tradeable ? "Yes" : "No"}
+              </p>
+            </div>
+          </div>
 
           <p className="text-xs text-text-muted mb-1">Reason</p>
           <p className="text-sm text-text-primary mb-3">{sig.reason}</p>

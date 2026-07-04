@@ -12,6 +12,7 @@ import {
   formatQuantity,
   formatPrice,
 } from "@/lib/format";
+import { getSourceBadge } from "@/lib/source_badge";
 import {
   TrendingUp,
   TrendingDown,
@@ -42,7 +43,7 @@ export default function Dashboard() {
 
   const { data: signals } = useQuery({
     queryKey: ["signals"],
-    queryFn: api.signals,
+    queryFn: () => api.signals(),
   });
 
   const { data: risk } = useQuery({
@@ -55,13 +56,32 @@ export default function Dashboard() {
     queryFn: api.orders,
   });
 
+  const { data: universe } = useQuery({
+    queryKey: ["trading-universe"],
+    queryFn: api.tradingUniverse,
+  });
+  const universeSymbols = universe?.symbols ?? [];
+
   useEffect(() => {
     wsClient.connect();
     return () => wsClient.disconnect();
   }, []);
 
+  const env = health?.account_environment ?? "mock";
+  const isMoomoo = env.startsWith("moomoo");
+
   const rawActiveSignals =
-    signals?.filter((s) => s.verdict === "BUY_STARTER" && s.approved !== false) || [];
+    signals?.filter(
+      (s) =>
+        s.verdict === "BUY_STARTER" &&
+        s.approved !== false &&
+        (!isMoomoo || (
+          s.data_source === "moomoo" &&
+          s.is_real_market_data === true &&
+          s.has_error !== true &&
+          universeSymbols.includes(s.symbol)
+        ))
+    ) || [];
   const activeSignals = (() => {
     const latestBySymbol = new Map<string, (typeof rawActiveSignals)[number]>();
     for (const sig of rawActiveSignals) {
@@ -76,10 +96,8 @@ export default function Dashboard() {
 
   const isDayUp = (portfolio?.day_pnl ?? 0) >= 0;
 
-  const env = health?.account_environment ?? "mock";
   const isMoomooReal = env === "moomoo_real";
   const isMoomooSim = env === "moomoo_simulate";
-  const isMoomoo = env.startsWith("moomoo");
   const isPaper = env === "paper";
   const isMock = env === "mock";
   const connected = health?.connected ?? true;
@@ -268,39 +286,54 @@ export default function Dashboard() {
           <GlassyCard title="Active Signals">
             {activeSignals.length === 0 ? (
               <div className="py-8 text-center text-text-muted text-sm">
-                No active signals. Run the screener from the Signals page.
+                {isMoomoo
+                  ? "Run screener to generate signals from moomoo market data."
+                  : "No active signals. Run the screener from the Signals page."}
               </div>
             ) : (
               <div className="space-y-2">
-                {activeSignals.slice(0, 5).map((sig) => (
-                  <div
-                    key={sig.id}
-                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-surface-hover/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-text-primary text-sm">
-                        {sig.symbol}
-                      </span>
-                      <StatusBadge status={sig.verdict} />
+                {activeSignals.slice(0, 5).map((sig) => {
+                  const badge = getSourceBadge(sig.data_source);
+                  return (
+                    <div
+                      key={sig.id}
+                      className="py-2 px-3 rounded-lg bg-surface-hover/50"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-text-primary text-sm">
+                            {sig.symbol}
+                          </span>
+                          <StatusBadge status={sig.verdict} />
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${badge.className}`}>
+                            {badge.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs font-mono text-text-secondary">
+                          <span>
+                            Score:{" "}
+                            <span className="text-accent-green">
+                              {sig.total_score}
+                            </span>
+                          </span>
+                          <span>
+                            Entry:{" "}
+                            <PriceDisplay value={sig.entry_min} prefix="$" />
+                          </span>
+                          <span>
+                            Stop:{" "}
+                            <PriceDisplay value={sig.stop_level} prefix="$" />
+                          </span>
+                        </div>
+                      </div>
+                      {!sig.is_real_market_data && (
+                        <p className="text-[11px] text-accent-amber mt-1">
+                          Research signal only — generated from mock/local data
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4 text-xs font-mono text-text-secondary">
-                      <span>
-                        Score:{" "}
-                        <span className="text-accent-green">
-                          {sig.total_score}
-                        </span>
-                      </span>
-                      <span>
-                        Entry:{" "}
-                        <PriceDisplay value={sig.entry_min} prefix="$" />
-                      </span>
-                      <span>
-                        Stop:{" "}
-                        <PriceDisplay value={sig.stop_level} prefix="$" />
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </GlassyCard>

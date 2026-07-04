@@ -96,90 +96,92 @@ class LocalMomentumResearchProvider:
             avg_vol_20 = _avg_volume(bars, 20) or 0
             current_vol = bars[-1][-1]
 
-            hard_pass = True
+            hard_filter_codes: list[str] = []
             hard_reasons: list[str] = []
 
             if sma50 is None or close <= sma50:
-                hard_pass = False
+                hard_filter_codes.append("price_below_sma50")
                 hard_reasons.append("Price below 50 SMA")
             if sma200 is None or close <= sma200:
-                hard_pass = False
+                hard_filter_codes.append("price_below_sma200")
                 hard_reasons.append("Price below 200 SMA")
             if ret_20d < spy_20d:
-                hard_pass = False
+                hard_filter_codes.append("underperforming_spy_20d")
                 hard_reasons.append(f"20d return {ret_20d:.1f}% < SPY {spy_20d:.1f}%")
             if ret_60d < spy_60d:
-                hard_pass = False
+                hard_filter_codes.append("underperforming_spy_60d")
                 hard_reasons.append(f"60d return {ret_60d:.1f}% < SPY {spy_60d:.1f}%")
             if avg_vol_20 > 0 and current_vol < avg_vol_20 * 0.5:
-                hard_pass = False
+                hard_filter_codes.append("volume_ratio_below_threshold")
                 hard_reasons.append("Volume significantly below average")
             if sma20 and close > sma20 * 1.15:
-                hard_pass = False
+                hard_filter_codes.append("price_too_far_above_sma20")
                 hard_reasons.append(f"Price {((close/sma20 - 1)*100):.1f}% above 20 SMA (> 15% max)")
 
-            if not hard_pass:
-                score = 0.0
+            trend_score = self._score_trend(close, sma50, sma200, sma20)
+            rs_score = self._score_relative_strength(ret_20d, ret_60d, spy_20d, spy_60d)
+            vol_score = self._score_volume(current_vol, avg_vol_20)
+            entry_score = self._score_entry_quality(close, sma20, sma50)
+            rr_score = self._score_risk_reward(close)
+            regime_score = self._score_market_regime(spy_bars)
+
+            total = trend_score + rs_score + vol_score + entry_score + rr_score + regime_score
+            scores = [
+                {"category": "Trend", "score": trend_score, "max_score": 25, "details": f"SMA50={sma50:.2f}, SMA200={sma200:.2f}"},
+                {"category": "Relative Strength", "score": rs_score, "max_score": 20, "details": f"20d={ret_20d:.1f}%, 60d={ret_60d:.1f}%"},
+                {"category": "Volume Confirmation", "score": vol_score, "max_score": 10, "details": f"Vol={current_vol:.0f}, Avg20={avg_vol_20:.0f}"},
+                {"category": "Entry Quality", "score": entry_score, "max_score": 15, "details": f"Distance from SMA20={((close/sma20 - 1)*100) if sma20 else 0:.1f}%"},
+                {"category": "Risk/Reward", "score": rr_score, "max_score": 15, "details": "Estimated from volatility"},
+                {"category": "Market Regime", "score": regime_score, "max_score": 15, "details": f"SPY 20d={spy_20d:.1f}%"},
+            ]
+
+            entry_range = round(close * 0.98, 2)
+            stop = round(close * 0.95, 2)
+            target_pct = 2.0
+            risk_amt = round((close - stop) * 100, 2)  # per 100 shares
+
+            if hard_filter_codes:
                 verdict = "AVOID"
+                reason = "; ".join(hard_reasons)
+                failed_filters = hard_filter_codes
+            elif total >= 75:
+                verdict = "BUY_STARTER"
+                reason = f"Score: {total:.1f}/100"
+                failed_filters = None
+            elif total >= 65:
+                verdict = "WATCH"
+                reason = f"Score: {total:.1f}/100 — borderline, monitor for improvement"
+                failed_filters = None
             else:
-                trend_score = self._score_trend(close, sma50, sma200, sma20)
-                rs_score = self._score_relative_strength(ret_20d, ret_60d, spy_20d, spy_60d)
-                vol_score = self._score_volume(current_vol, avg_vol_20)
-                entry_score = self._score_entry_quality(close, sma20, sma50)
-                rr_score = self._score_risk_reward(close)
-                regime_score = self._score_market_regime(spy_bars)
-
-                total = trend_score + rs_score + vol_score + entry_score + rr_score + regime_score
-
-                scores = [
-                    {"category": "Trend", "score": trend_score, "max_score": 25, "details": f"SMA50={sma50:.2f}, SMA200={sma200:.2f}"},
-                    {"category": "Relative Strength", "score": rs_score, "max_score": 20, "details": f"20d={ret_20d:.1f}%, 60d={ret_60d:.1f}%"},
-                    {"category": "Volume Confirmation", "score": vol_score, "max_score": 10, "details": f"Vol={current_vol:.0f}, Avg20={avg_vol_20:.0f}"},
-                    {"category": "Entry Quality", "score": entry_score, "max_score": 15, "details": f"Distance from SMA20={((close/sma20 - 1)*100) if sma20 else 0:.1f}%"},
-                    {"category": "Risk/Reward", "score": rr_score, "max_score": 15, "details": "Estimated from volatility"},
-                    {"category": "Market Regime", "score": regime_score, "max_score": 15, "details": f"SPY 20d={spy_20d:.1f}%"},
-                ]
-
-                entry_range = round(close * 0.98, 2)
-                stop = round(close * 0.95, 2)
-                target_pct = 2.0
-                risk_amt = round((close - stop) * 100, 2)  # per 100 shares
-
-                if total >= 75:
-                    verdict = "BUY_STARTER"
-                else:
-                    verdict = "WATCH"
-
-                signal = SignalDto(
-                    symbol=symbol,
-                    verdict=verdict,
-                    total_score=round(total, 1),
-                    scores=scores,
-                    reason="; ".join(hard_reasons) if not hard_pass else f"Score: {total:.1f}/100",
-                    entry_min=entry_range,
-                    entry_max=close,
-                    stop_level=stop,
-                    target_size_pct=target_pct,
-                    risk_amount=risk_amt,
-                    invalidation=f"Close below ${stop:.2f} or 20d return < SPY",
-                    current_price=close,
-                )
-                results.append(signal)
-                continue
+                verdict = "AVOID"
+                reason = f"Score: {total:.1f}/100 — insufficient setup quality"
+                failed_filters = ["below_threshold_score"]
 
             signal = SignalDto(
                 symbol=symbol,
                 verdict=verdict,
-                total_score=0.0,
-                scores=[],
-                reason="; ".join(hard_reasons),
-                entry_min=None,
-                entry_max=None,
-                stop_level=None,
-                target_size_pct=None,
-                risk_amount=None,
-                invalidation=None,
+                total_score=round(total, 1),
+                scores=scores,
+                reason=reason,
+                entry_min=entry_range,
+                entry_max=close,
+                stop_level=stop,
+                target_size_pct=target_pct if verdict == "BUY_STARTER" else None,
+                risk_amount=risk_amt,
+                invalidation=f"Close below ${stop:.2f} or 20d return < SPY",
                 current_price=close,
+                strategy_name="momentum_relative_strength",
+                data_source="local_generated",
+                generated_at=datetime.now(timezone.utc),
+                universe=list(request.universe),
+                price_source="mock_synthetic",
+                bar_source="mock_generated",
+                is_real_market_data=False,
+                is_tradeable=False,
+                has_error=False,
+                failed_filters=failed_filters,
+                data_quality_status="OK",
+                calculated_score_before_filters=round(total, 1),
             )
             results.append(signal)
 

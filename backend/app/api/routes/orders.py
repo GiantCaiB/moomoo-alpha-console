@@ -11,9 +11,8 @@ from app.models.order import Order
 from app.db.session import get_session
 from app.services.execution.order_service import preview_order, approve_order, cancel_existing_order
 from app.services.broker.base import BrokerAdapter
-from app.services.broker.safety import compute_broker_safety_state
 from app.services.risk.engine import RiskEngine
-from app.api.dependencies import get_broker, get_risk_engine
+from app.api.dependencies import get_broker, get_risk_engine, get_runtime_state
 
 router = APIRouter()
 
@@ -59,9 +58,8 @@ async def approve_order_route(
     risk_engine: RiskEngine = Depends(get_risk_engine),
     session: AsyncSession = Depends(get_session),
 ):
-    bh = await broker.health_check()
-    safety = compute_broker_safety_state(bh)
-    if safety["read_only"] or not safety["is_live_trading_enabled"]:
+    runtime_state = await get_runtime_state().build(session)
+    if runtime_state.read_only:
         raise HTTPException(status_code=403, detail="Read-only mode: order actions are disabled.")
     result = await approve_order(
         order_id=req.order_id,
@@ -78,9 +76,8 @@ async def cancel_order_route(
     broker: BrokerAdapter = Depends(get_broker),
     session: AsyncSession = Depends(get_session),
 ):
-    bh = await broker.health_check()
-    safety = compute_broker_safety_state(bh)
-    if safety["read_only"] or not safety["is_live_trading_enabled"]:
+    runtime_state = await get_runtime_state().build(session)
+    if runtime_state.read_only:
         raise HTTPException(status_code=403, detail="Read-only mode: order actions are disabled.")
     result = await cancel_existing_order(
         order_id=req.order_id,

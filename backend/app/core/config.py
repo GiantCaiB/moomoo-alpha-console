@@ -1,5 +1,7 @@
+import json
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Literal
+from typing import Any, Literal
 
 
 class Settings(BaseSettings):
@@ -34,10 +36,32 @@ class Settings(BaseSettings):
     allowed_order_types: list[str] = ["LIMIT"]
     min_equity_for_trading: float = 500.0
 
-    universe_symbols: list[str] = [
-        "SPY", "QQQ", "AAPL", "MSFT", "NVDA", "AMZN",
-        "META", "GOOGL", "TSLA", "AMD", "AVGO", "COST", "NFLX",
-    ]
+    universe_symbols: Any = []
+
+    @field_validator("universe_symbols", mode="before")
+    @classmethod
+    def parse_universe_list(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            stripped = v.strip()
+            if not stripped:
+                return []
+            if stripped.startswith("["):
+                try:
+                    parsed = json.loads(stripped)
+                    if isinstance(parsed, list):
+                        return [str(s).strip().upper() for s in parsed if str(s).strip()]
+                except json.JSONDecodeError:
+                    pass
+            return [s.strip().upper() for s in stripped.split(",") if s.strip()]
+        if not isinstance(v, list):
+            return []
+        return [str(s).strip().upper() for s in v if str(s).strip()]
+
+    kline_provider: str = "yfinance"
+    kline_fallback_provider: str = "yfinance"
+    enable_kline_cache: bool = True
+    kline_lookback_days: int = 400
+    kline_extended_lookback_days: int = 1825
 
     log_level: str = "INFO"
     log_file: str = "data/console.log"

@@ -26,3 +26,15 @@ class SignalResponse(BaseModel):
     approved: bool | None
     signal_date: datetime
     created_at: datetime
+    strategy_name: str | None = None
+    data_source: str | None = None
+    generated_at: datetime | None = None
+    universe: list[str] | None = None
+    price_source: str | None = None
+    bar_source: str | None = None
+    is_real_market_data: bool = False
+    is_tradeable: bool = False
+    has_error: bool = False
+    failed_filters: list[str] | None = None
+    data_quality_status: str = "OK"
+    calculated_score_before_filters: float | None = None

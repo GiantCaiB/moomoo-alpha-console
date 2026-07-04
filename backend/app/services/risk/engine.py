@@ -145,7 +145,8 @@ def rule_must_be_limit(ctx: OrderCheckContext) -> RiskDecision | None:
 
 
 def rule_symbol_in_universe(ctx: OrderCheckContext) -> RiskDecision | None:
-    if ctx.symbol.upper() not in [s.upper() for s in settings.universe_symbols]:
+    approved_universe = [s.upper() for s in settings.universe_symbols]
+    if approved_universe and ctx.symbol.upper() not in approved_universe:
         return RiskDecision(
             allowed=False,
             reasons=[f"{ctx.symbol} is not in the approved trading universe"],

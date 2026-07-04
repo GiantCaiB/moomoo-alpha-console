@@ -1,18 +1,108 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useBrokerHealth } from "@/app/providers";
 import GlassyCard from "@/components/shared/GlassyCard";
-import { AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, Plus, X, RotateCcw, Save, BarChart3 } from "lucide-react";
+import type { MarketDataStatusResponse } from "@/lib/types";
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient();
   const { data: config, isLoading } = useQuery({
     queryKey: ["config"],
     queryFn: api.config,
   });
 
   const { health: brokerHealth, isLoading: bhLoading } = useBrokerHealth();
+
+  const { data: mdStatus } = useQuery<MarketDataStatusResponse>({
+    queryKey: ["market-data-status"],
+    queryFn: api.marketDataStatus,
+    refetchInterval: 30_000,
+  });
+
+  const {
+    data: universeData,
+    isLoading: tuLoading,
+  } = useQuery({
+    queryKey: ["trading-universe"],
+    queryFn: api.tradingUniverse,
+  });
+
+  const [symbols, setSymbols] = useState<string[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (universeData) {
+      setSymbols([...universeData.symbols]);
+    }
+  }, [universeData]);
+
+  const saveMutation = useMutation({
+    mutationFn: (newSymbols: string[]) => api.saveTradingUniverse(newSymbols),
+    onSuccess: () => {
+      setSaveSuccess(true);
+      setSaveError(null);
+      queryClient.invalidateQueries({ queryKey: ["trading-universe"] });
+      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+    },
+    onError: (err: Error) => {
+      setSaveError(err.message);
+      setSaveSuccess(false);
+      queryClient.invalidateQueries({ queryKey: ["trading-universe"] });
+    },
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: api.deleteTradingUniverse,
+    onSuccess: () => {
+      setSymbols([]);
+      setSaveSuccess(false);
+      setSaveError(null);
+      queryClient.invalidateQueries({ queryKey: ["trading-universe"] });
+      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["trading-universe"] });
+    },
+  });
+
+  const handleAdd = () => {
+    const trimmed = inputValue.toUpperCase().trim();
+    if (!trimmed) return;
+    if (symbols.includes(trimmed)) {
+      setSaveError(`${trimmed} is already in the universe`);
+      return;
+    }
+    setSymbols((prev) => [...prev, trimmed]);
+    setInputValue("");
+    setSaveError(null);
+    setSaveSuccess(false);
+  };
+
+  const handleRemove = (sym: string) => {
+    setSymbols((prev) => prev.filter((s) => s !== sym));
+    setSaveError(null);
+    setSaveSuccess(false);
+  };
+
+  const handleReset = () => {
+    resetMutation.mutate();
+  };
+
+  const handleSave = () => {
+    if (symbols.length === 0) {
+      setSaveError("Trading universe cannot be empty");
+      return;
+    }
+    setSaveError(null);
+    setSaveSuccess(false);
+    saveMutation.mutate(symbols);
+  };
 
   return (
     <div>
@@ -205,21 +295,103 @@ export default function SettingsPage() {
         </GlassyCard>
 
         <GlassyCard title="Trading Universe">
-          {isLoading ? (
-            <div className="h-20 bg-surface-hover animate-pulse rounded" />
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {config?.universe_symbols?.map((sym) => (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                placeholder="Add symbol..."
+                className="flex-1 px-3 py-1.5 rounded-lg bg-surface border border-surface-border
+                           text-sm font-mono text-text-primary placeholder-text-muted
+                           focus:outline-none focus:border-accent-blue"
+              />
+              <button
+                onClick={handleAdd}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg
+                           bg-accent-blue/10 text-accent-blue text-sm font-medium
+                           border border-accent-blue/30 hover:bg-accent-blue/20"
+              >
+                <Plus size={14} />
+                Add
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 min-h-[2rem]">
+              {symbols.map((sym) => (
                 <span
                   key={sym}
-                  className="px-3 py-1.5 rounded-lg bg-surface-hover text-sm font-mono
-                             text-text-primary border border-surface-border"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                             bg-surface-hover text-sm font-mono text-text-primary
+                             border border-surface-border"
                 >
                   {sym}
+                  <button
+                    onClick={() => handleRemove(sym)}
+                    className="text-text-muted hover:text-accent-red transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
                 </span>
               ))}
+              {symbols.length === 0 && (
+                <span className="text-sm text-text-muted">
+                  No symbols configured. Add symbols above.
+                </span>
+              )}
             </div>
-          )}
+
+            <div className="flex items-center justify-between pt-2 border-t border-surface-border">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleReset}
+                  disabled={resetMutation.isPending}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg
+                             bg-surface-hover text-text-muted text-xs font-medium
+                             hover:text-accent-amber transition-colors
+                             disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <RotateCcw size={12} />
+                  Reset to Default
+                </button>
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={saveMutation.isPending}
+                className="flex items-center gap-1 px-4 py-1.5 rounded-lg
+                           bg-accent-green/10 text-accent-green text-sm font-medium
+                           border border-accent-green/30 hover:bg-accent-green/20
+                           disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Save size={14} />
+                {saveMutation.isPending ? "Saving..." : "Save"}
+              </button>
+            </div>
+
+            {saveError && (
+              <div className="flex items-center gap-1.5 text-xs text-accent-red">
+                <AlertTriangle size={12} />
+                <span>{saveError}</span>
+              </div>
+            )}
+            {saveSuccess && (
+              <div className="flex items-center gap-1.5 text-xs text-accent-green">
+                <CheckCircle size={12} />
+                <span>Trading universe saved. Run Screener to apply changes.</span>
+              </div>
+            )}
+            {universeData?.source === "default" && symbols.length > 0 && (
+              <div className="text-xs text-text-muted">
+                Source: environment defaults
+              </div>
+            )}
+            {universeData?.source === "database" && (
+              <div className="text-xs text-text-muted">
+                Source: saved settings
+              </div>
+            )}
+          </div>
         </GlassyCard>
 
         <GlassyCard title="Allowed Order Types">
@@ -237,6 +409,82 @@ export default function SettingsPage() {
                 </span>
               ))}
             </div>
+          )}
+        </GlassyCard>
+
+        <GlassyCard title="K-Line Data Provider">
+          {mdStatus ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Provider</span>
+                <span className="text-sm font-mono text-accent-green">
+                  {mdStatus.provider.toUpperCase()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Cache Enabled</span>
+                <span className={`text-sm font-mono ${mdStatus.cache_enabled ? "text-accent-green" : "text-text-muted"}`}>
+                  {mdStatus.cache_enabled ? "YES" : "NO"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Lookback Days</span>
+                <span className="text-sm font-mono">{mdStatus.lookback_days}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">Extended Lookback</span>
+                <span className="text-sm font-mono">{mdStatus.extended_lookback_days}</span>
+              </div>
+              <div className="border-t border-surface-border pt-3 mt-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 size={14} className="text-text-muted" />
+                  <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Cache Metrics</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-surface-hover rounded p-2">
+                    <div className="text-lg font-mono text-accent-blue">{mdStatus.requests}</div>
+                    <div className="text-xs text-text-muted">Requests</div>
+                  </div>
+                  <div className="bg-surface-hover rounded p-2">
+                    <div className="text-lg font-mono text-accent-green">{mdStatus.cache_hits}</div>
+                    <div className="text-xs text-text-muted">Cache Hits</div>
+                  </div>
+                  <div className="bg-surface-hover rounded p-2">
+                    <div className="text-lg font-mono text-accent-amber">{mdStatus.cache_misses}</div>
+                    <div className="text-xs text-text-muted">Cache Misses</div>
+                  </div>
+                  <div className="bg-surface-hover rounded p-2">
+                    <div className="text-lg font-mono text-accent-amber">{mdStatus.upstream_fetches}</div>
+                    <div className="text-xs text-text-muted">Upstream Fetches</div>
+                  </div>
+                  <div className="bg-surface-hover rounded p-2">
+                    <div className="text-lg font-mono text-accent-red">{mdStatus.failed}</div>
+                    <div className="text-xs text-text-muted">Failed</div>
+                  </div>
+                  {mdStatus.latest_successful_fetch && (
+                    <div className="bg-surface-hover rounded p-2 col-span-2">
+                      <div className="text-xs font-mono text-text-muted truncate">{mdStatus.latest_successful_fetch}</div>
+                      <div className="text-xs text-text-muted">Last Success</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {Object.keys(mdStatus.per_symbol).length > 0 && (
+                <div className="border-t border-surface-border pt-3 mt-1">
+                  <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Per-Symbol</span>
+                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                    {Object.entries(mdStatus.per_symbol).map(([sym, info]) => (
+                      <div key={sym} className="flex items-center justify-between text-xs">
+                        <span className="font-mono text-text-primary">{sym}</span>
+                        <span className="text-text-muted">{info.bars} bars ({info.source})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="h-20 bg-surface-hover animate-pulse rounded" />
           )}
         </GlassyCard>
       </div>

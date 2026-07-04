@@ -5,9 +5,10 @@ from sqlalchemy import select
 from app.schemas.watchlist import WatchlistItemResponse, WatchlistAddRequest
 from app.models.watchlist_item import WatchlistItem
 from app.db.session import get_session
-from app.core.config import settings
+from app.services.settings.trading_universe import TradingUniverseResolver
 
 router = APIRouter()
+resolver = TradingUniverseResolver()
 
 
 @router.get("/api/v1/watchlist", response_model=list[WatchlistItemResponse])
@@ -18,8 +19,10 @@ async def get_watchlist(session: AsyncSession = Depends(get_session)):
     items = result.scalars().all()
 
     if not items:
+        universe_state = await resolver.resolve(session)
+        universe = universe_state.symbols
         items = []
-        for i, sym in enumerate(settings.universe_symbols):
+        for i, sym in enumerate(universe):
             item = WatchlistItem(
                 symbol=sym,
                 list_name="default",

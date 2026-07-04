@@ -9,6 +9,10 @@ import type {
   WatchlistItemResponse,
   PreviewOrderResponse,
   BrokerHealthResponse,
+  TradingUniverseResponse,
+  RuntimeStatusResponse,
+  RunSignalsResponse,
+  MarketDataStatusResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8020";
@@ -60,13 +64,13 @@ export const api = {
       body: JSON.stringify({ order_id }),
     }),
 
-  signals: () => fetcher<SignalResponse[]>("/api/v1/signals"),
+  signals: (includeLocal?: boolean) => {
+    const params = includeLocal ? "?include_local=true" : "";
+    return fetcher<SignalResponse[]>(`/api/v1/signals${params}`);
+  },
 
   runSignals: () =>
-    fetcher<{ success: boolean; strategy_run_id: string; status: string }>(
-      "/api/v1/signals/run",
-      { method: "POST" }
-    ),
+    fetcher<RunSignalsResponse>("/api/v1/signals/run", { method: "POST" }),
 
   riskStatus: () => fetcher<RiskStatusResponse>("/api/v1/risk/status"),
 
@@ -79,4 +83,29 @@ export const api = {
   watchlist: () => fetcher<WatchlistItemResponse[]>("/api/v1/watchlist"),
 
   brokerHealth: () => fetcher<BrokerHealthResponse>("/api/v1/broker/health"),
+
+  runtimeStatus: () => fetcher<RuntimeStatusResponse>("/api/v1/runtime/status"),
+
+  deleteStaleSignals: () =>
+    fetcher<{ success: boolean; deleted_count: number }>(
+      "/api/v1/signals/stale",
+      { method: "DELETE" }
+    ),
+
+  tradingUniverse: () =>
+    fetcher<TradingUniverseResponse>("/api/v1/settings/trading-universe"),
+
+  saveTradingUniverse: (symbols: string[]) =>
+    fetcher<TradingUniverseResponse>("/api/v1/settings/trading-universe", {
+      method: "PUT",
+      body: JSON.stringify({ symbols }),
+    }),
+
+  deleteTradingUniverse: () =>
+    fetcher<{ success: boolean }>("/api/v1/settings/trading-universe", {
+      method: "DELETE",
+    }),
+
+  marketDataStatus: () =>
+    fetcher<MarketDataStatusResponse>("/api/v1/market-data/status"),
 };

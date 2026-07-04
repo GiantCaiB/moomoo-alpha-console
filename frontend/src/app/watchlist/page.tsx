@@ -12,9 +12,9 @@ export default function WatchlistPage() {
   const { health } = useBrokerHealth();
   const readOnly = isReadOnlyMode(health);
 
-  const { data: config, isLoading: cfgLoading } = useQuery({
-    queryKey: ["config"],
-    queryFn: api.config,
+  const { data: universe, isLoading: tuLoading } = useQuery({
+    queryKey: ["trading-universe"],
+    queryFn: api.tradingUniverse,
   });
 
   const { data: watchlist, isLoading: wlLoading } = useQuery({
@@ -22,9 +22,9 @@ export default function WatchlistPage() {
     queryFn: api.watchlist,
   });
 
-  const symbols: string[] = config?.universe_symbols ?? [];
+  const symbols: string[] = universe?.symbols ?? [];
 
-  const isLoading = cfgLoading || wlLoading;
+  const isLoading = tuLoading || wlLoading;
 
   return (
     <div>

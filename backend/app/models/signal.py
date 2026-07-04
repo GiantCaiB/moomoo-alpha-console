@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, Float, DateTime, Text, ForeignKey
+from sqlalchemy import String, Float, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UUIDMixin, TimestampMixin
 
@@ -25,3 +25,17 @@ class Signal(Base, UUIDMixin, TimestampMixin):
     signal_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
+    strategy_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    data_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    universe_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    price_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    bar_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    is_real_market_data: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_tradeable: Mapped[bool] = mapped_column(Boolean, default=False)
+    has_error: Mapped[bool] = mapped_column(Boolean, default=False)
+    failed_filters: Mapped[str | None] = mapped_column(Text, nullable=True)
+    data_quality_status: Mapped[str] = mapped_column(String(30), default="OK")
+    calculated_score_before_filters: Mapped[float | None] = mapped_column(Float, nullable=True)

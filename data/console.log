@@ -1,0 +1,1294 @@
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: PUT http://test/api/v1/settings/trading-universe "HTTP/1.1 422 Unprocessable Entity"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5219s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/runtime/status "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/health "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/config "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT watchlist_items.symbol, watchlist_items.list_name, watchlist_items.sort_order, watchlist_items.notes, watchlist_items.added_price, watchlist_items.id, watchlist_items.created_at, watchlist_items.updated_at 
+FROM watchlist_items ORDER BY watchlist_items.sort_order
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00014s] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5341s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/watchlist "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5395s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals 
+WHERE signals.data_source IN (?, ?) AND signals.is_real_market_data = 1 AND signals.symbol IN (SELECT 1 FROM (SELECT 1) WHERE 1!=1) ORDER BY signals.created_at DESC
+ LIMIT ? OFFSET ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00022s] ('local_generated', 'moomoo', 50, 0)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/signals "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5558s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00033s] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:29:18.414241', None, None, 0, 'local_generated', None, '32fbcce7-bec0-4b9a-88d2-83921b3cf13b', '2026-07-04 15:29:18.417935', '2026-07-04 15:29:18.417938')
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, completed_at=?, universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00022s] ('COMPLETED', '2026-07-04 15:29:18.437687', 'default', '2026-07-04 15:29:18.438526', '32fbcce7-bec0-4b9a-88d2-83921b3cf13b')
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 0 signals generated, 0 data errors
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.6783s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT risk_events.event_type, risk_events.severity, risk_events.symbol, risk_events.message, risk_events.details, risk_events.blocked, risk_events.event_time, risk_events.id, risk_events.created_at, risk_events.updated_at 
+FROM risk_events ORDER BY risk_events.event_time DESC
+ LIMIT ? OFFSET ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00013s] (20, 0)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/risk/status "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | WARNING | app.services.risk.engine | Kill switch ENABLED
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/risk/kill-switch "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | WARNING | app.services.risk.engine | Kill switch DISABLED
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/risk/kill-switch "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | app.services.risk.engine | Order blocked: BUY on AAPL | reasons: ['Position size 2100.00 + existing 2079.00 exceeds max 3073.30 (5.0% of portfolio)']
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/orders/preview "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | WARNING | app.services.risk.engine | Kill switch ENABLED
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/risk/kill-switch "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | app.services.risk.engine | Order blocked: BUY on AAPL | reasons: ['Global kill switch is enabled', 'Position size 2100.00 + existing 2075.40 exceeds max 3083.21 (5.0% of portfolio)']
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/orders/preview "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | WARNING | app.services.risk.engine | Kill switch DISABLED
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/risk/kill-switch "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/broker/health "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | INSERT INTO orders (symbol, side, order_type, quantity, filled_quantity, limit_price, stop_price, status, reason, broker_order_id, signal_id, risk_check_passed, risk_details, submitted_at, filled_at, cancelled_at, notes, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00022s] ('AAPL', 'BUY', 'LIMIT', 10, 0, 210.0, None, 'PENDING', None, None, None, None, None, None, None, None, None, '9e84cba3-b858-4b4f-8551-3d6da1255799', '2026-07-04 15:29:18.568471', '2026-07-04 15:29:18.568473')
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.803s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/orders/approve "HTTP/1.1 403 Forbidden"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | INSERT INTO orders (symbol, side, order_type, quantity, filled_quantity, limit_price, stop_price, status, reason, broker_order_id, signal_id, risk_check_passed, risk_details, submitted_at, filled_at, cancelled_at, notes, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.111s ago] ('AAPL', 'BUY', 'LIMIT', 10, 0, 210.0, None, 'PENDING', None, None, None, None, None, None, None, None, None, '85bf6ff4-8bd8-4026-958c-cbe2aa726610', '2026-07-04 15:29:18.679261', '2026-07-04 15:29:18.679264')
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.9343s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: POST http://test/api/v1/orders/cancel "HTTP/1.1 403 Forbidden"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | DELETE FROM app_settings WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.9652s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | INSERT INTO app_settings ("key", value, description, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00058s] ('trading_universe', '["AAPL"]', None, 'ee726a95-c319-4e9c-9fa0-d3165a5cd217', '2026-07-04 15:29:18.823075', '2026-07-04 15:29:18.823079')
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00043s] ('momentum_relative_strength', 'COMPLETED', 2, 2, '2026-07-04 15:29:18.818862', '2026-07-04 15:29:18.818862', None, 0, 'moomoo', None, 'cb6d9bcb-2cad-4aa8-84bf-0636da2ee182', '2026-07-04 15:29:18.828102', '2026-07-04 15:29:18.828106')
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, p ... 252 characters truncated ... ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00020s (insertmanyvalues) 1/1 (unordered)] ('cb6d9bcb-2cad-4aa8-84bf-0636da2ee182', 'LOCAL', 'BUY_STARTER', 80.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:18.818862', 'momentum_relative_strength', 'local_generated', None, None, None, None, 0, 0, 0, None, 'OK', None, 'c3169636-58ad-43da-8762-f1efa494500e', '2026-07-04 15:29:18.829748', '2026-07-04 15:29:18.829749', 'cb6d9bcb-2cad-4aa8-84bf-0636da2ee182', 'AAPL', 'WATCH', 60.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:18.818862', 'momentum_relative_strength', 'moomoo', None, None, None, None, 1, 0, 0, None, 'OK', None, '8cc5734f-eb06-4baf-8884-1098b1fac98e', '2026-07-04 15:29:18.829752', '2026-07-04 15:29:18.829752')
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 1.124s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals 
+WHERE signals.data_source IN (?, ?) AND signals.is_real_market_data = 1 AND signals.symbol IN (?) ORDER BY signals.created_at DESC
+ LIMIT ? OFFSET ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5849s ago] ('moomoo_snapshot_plus_yfinance_kline', 'moomoo', 'AAPL', 50, 0)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT signal_scores.signal_id, signal_scores.category, signal_scores.score, signal_scores.max_score, signal_scores.details, signal_scores.id 
+FROM signal_scores 
+WHERE signal_scores.signal_id = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00038s] ('8cc5734f-eb06-4baf-8884-1098b1fac98e',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/signals "HTTP/1.1 200 OK"
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 1.135s ago] ('trading_universe',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals ORDER BY signals.created_at DESC
+ LIMIT ? OFFSET ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00018s] (50, 0)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT signal_scores.signal_id, signal_scores.category, signal_scores.score, signal_scores.max_score, signal_scores.details, signal_scores.id 
+FROM signal_scores 
+WHERE signal_scores.signal_id = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.00759s ago] ('8cc5734f-eb06-4baf-8884-1098b1fac98e',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | SELECT signal_scores.signal_id, signal_scores.category, signal_scores.score, signal_scores.max_score, signal_scores.details, signal_scores.id 
+FROM signal_scores 
+WHERE signal_scores.signal_id = ?
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | [cached since 0.008331s ago] ('c3169636-58ad-43da-8762-f1efa494500e',)
+2026-07-05 01:29:18 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:18 | INFO    | httpx | HTTP Request: GET http://test/api/v1/signals?include_local=true "HTTP/1.1 200 OK"
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.143s ago] ('trading_universe',)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:19 | INFO    | httpx | HTTP Request: GET http://test/api/v1/runtime/status "HTTP/1.1 200 OK"
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00013s] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | DELETE FROM signals WHERE signals.id = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00014s] [('8cc5734f-eb06-4baf-8884-1098b1fac98e',), ('c3169636-58ad-43da-8762-f1efa494500e',)]
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.2683s ago] ('test', 'COMPLETED', 3, 3, '2026-07-04 15:29:19.010121', '2026-07-04 15:29:19.010121', None, 0, 'mock', None, '23125587-5f0b-4079-95ed-80c491102878', '2026-07-04 15:29:19.096051', '2026-07-04 15:29:19.096054')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, p ... 341 characters truncated ... ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00031s (insertmanyvalues) 1/1 (unordered)] ('23125587-5f0b-4079-95ed-80c491102878', 'SYM0', 'BUY_STARTER', 70.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:19.010121', 'test', 'local_generated', None, None, None, None, 0, 0, 0, None, 'OK', None, 'c3984ba0-fd8e-46e4-ba88-9e3d867c0885', '2026-07-04 15:29:19.099422', '2026-07-04 15:29:19.099425', '23125587-5f0b-4079-95ed-80c491102878', 'SYM1', 'BUY_STARTER', 70.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:19.010121', 'test', 'mock', None, None, None, None, 0, 0, 0, None, 'OK', None, 'ea8f25e3-8399-4d40-82c9-ee77fe2508c7', '2026-07-04 15:29:19.099429', '2026-07-04 15:29:19.099430', '23125587-5f0b-4079-95ed-80c491102878', 'SYM2', 'BUY_STARTER', 70.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:19.010121', 'test', 'moomoo', None, None, None, None, 0, 0, 0, None, 'OK', None, '5b41cc33-e17c-4e82-8ef4-aab93b62bea6', '2026-07-04 15:29:19.099434', '2026-07-04 15:29:19.099435')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.356s ago] ('trading_universe',)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals 
+WHERE (signals.data_source IN (?, ?) OR signals.is_real_market_data = 0 OR (signals.symbol NOT IN (?))) AND NOT (signals.data_source IN (?, ?) AND signals.is_real_market_data = 1 AND signals.has_error = 0 AND signals.symbol IN (?))
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00037s] ('local_generated', 'mock', 'AAPL', 'moomoo', 'moomoo_snapshot_plus_yfinance_kline', 'AAPL')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | DELETE FROM signals WHERE signals.id = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.206s ago] [('5b41cc33-e17c-4e82-8ef4-aab93b62bea6',), ('c3984ba0-fd8e-46e4-ba88-9e3d867c0885',), ('ea8f25e3-8399-4d40-82c9-ee77fe2508c7',)]
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | httpx | HTTP Request: DELETE http://test/api/v1/signals/stale "HTTP/1.1 200 OK"
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.47s ago] ('trading_universe',)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.9133s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:29:19.330341', None, None, 0, 'local_generated', None, '524fd488-2481-4a68-9ef8-dd52284fda9a', '2026-07-04 15:29:19.330961', '2026-07-04 15:29:19.330963')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00077s] ('524fd488-2481-4a68-9ef8-dd52284fda9a', 'AAPL', 'AVOID', 67.8, 'Price below 50 SMA; 20d return -3.8% < SPY 6.6%', 179.78, 183.44806952445487, 174.28, None, 916.81, 'Close below $174.28 or 20d return < SPY', 183.44806952445487, None, '2026-07-04 15:29:19.334090', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:29:19.334077', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "underperforming_spy_20d"]', 'OK', 67.8, '7688f9f5-50a5-412c-9ece-f380f9f4db51', '2026-07-04 15:29:19.334960', '2026-07-04 15:29:19.334964')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00047s] ('database', '2026-07-04 15:29:19.337804', '524fd488-2481-4a68-9ef8-dd52284fda9a')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00030s (insertmanyvalues) 1/1 (unordered)] ('7688f9f5-50a5-412c-9ece-f380f9f4db51', 'Trend', 10.0, 25.0, 'SMA50=190.70, SMA200=180.82', '2c08c235-cf88-4f96-b4c8-9c52fcd95942', '7688f9f5-50a5-412c-9ece-f380f9f4db51', 'Relative Strength', 12.0, 20.0, '20d=-3.8%, 60d=4.1%', 'b0d809f5-7473-42cb-8688-366e088e3ecf', '7688f9f5-50a5-412c-9ece-f380f9f4db51', 'Volume Confirmation', 8.0, 10.0, 'Vol=7686339, Avg20=6071301', '57f8a984-e69a-4b63-9334-c5a107fdfb80', '7688f9f5-50a5-412c-9ece-f380f9f4db51', 'Entry Quality', 11.0, 15.0, 'Distance from SMA20=0.1%', '5359775f-565e-4c8f-b879-077fa6928dce', '7688f9f5-50a5-412c-9ece-f380f9f4db51', 'Risk/Reward', 11.8402364623004, 15.0, 'Estimated from volatility', 'ba05e6eb-7626-4f7a-8f57-30f9f16bae05', '7688f9f5-50a5-412c-9ece-f380f9f4db51', 'Market Regime', 15.0, 15.0, 'SPY 20d=6.6%', '8061f3f0-3cfc-4d5c-b239-a8e9c23b0289')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00046s] ('COMPLETED', 1, 1, '2026-07-04 15:29:19.339839', '2026-07-04 15:29:19.344075', '524fd488-2481-4a68-9ef8-dd52284fda9a')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.639s ago] ('trading_universe',)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:19 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.661s ago] ('trading_universe',)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.102s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:29:19.519570', None, None, 0, 'moomoo_snapshot_plus_yfinance_kline', None, '865b634a-34e2-4fcf-8d6c-d9cf0969e859', '2026-07-04 15:29:19.519795', '2026-07-04 15:29:19.519796')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.2043s ago] ('865b634a-34e2-4fcf-8d6c-d9cf0969e859', 'AAPL', 'AVOID', 54.0, 'Price 104.1% above 20 SMA (> 15% max)', 204.05, 208.21, 188.21, None, 2000.0, 'Close below $188.21 or 20d return < SPY', 208.21, None, '2026-07-04 15:29:19.538745', 'momentum_relative_strength', 'moomoo_snapshot_plus_yfinance_kline', '2026-07-04 15:29:19.538692', '["AAPL"]', 'moomoo_quote_last_price', 'yfinance_cached_daily_bars', 1, 0, 0, '["price_too_far_above_sma20"]', 'OK', 54.0, '238db61f-c929-4323-95fd-c0834cb7c203', '2026-07-04 15:29:19.538966', '2026-07-04 15:29:19.538967')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.2021s ago] ('database', '2026-07-04 15:29:19.539699', '865b634a-34e2-4fcf-8d6c-d9cf0969e859')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1995s ago (insertmanyvalues) 1/1 (unordered)] ('238db61f-c929-4323-95fd-c0834cb7c203', 'Trend', 22.0, 25.0, 'SMA50=102.00, SMA200=102.00', 'bc6a197c-c46d-4889-9382-e7a97d6ed77a', '238db61f-c929-4323-95fd-c0834cb7c203', 'Relative Strength', 8.0, 20.0, '20d=0.0%, 60d=0.0%', '92f279f1-338a-43ce-b3c4-eadf0e53b788', '238db61f-c929-4323-95fd-c0834cb7c203', 'Volume Confirmation', 5.0, 10.0, 'Vol=1000000, Avg20=1000000', 'ded40ae5-5daa-4206-9530-8628382bc80b', '238db61f-c929-4323-95fd-c0834cb7c203', 'Entry Quality', 5.0, 15.0, 'Distance from SMA20=104.1%', '373a6be5-3417-4149-ad27-43f7370b8ec6', '238db61f-c929-4323-95fd-c0834cb7c203', 'Risk/Reward', 6.0, 15.0, 'Estimated from ATR-based volatility', 'a21ea25b-1695-46df-a8eb-90dd542cb1b8', '238db61f-c929-4323-95fd-c0834cb7c203', 'Market Regime', 8.0, 15.0, 'SPY 20d=0.0%', 'e2306c59-7f42-4679-91c2-f8329813024e')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1973s ago] ('COMPLETED', 1, 1, '2026-07-04 15:29:19.540248', '2026-07-04 15:29:19.541128', '865b634a-34e2-4fcf-8d6c-d9cf0969e859')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.837s ago] ('trading_universe',)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:19 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | DELETE FROM signals
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00015s] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | DELETE FROM strategy_runs
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00020s] ()
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | DELETE FROM app_settings WHERE app_settings."key" = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.866s ago] ('trading_universe',)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO app_settings ("key", value, description, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.8997s ago] ('trading_universe', '["MOOMOO", "AAPL", "MSFT"]', None, '93f83122-cea2-4638-baa8-74757b42a846', '2026-07-04 15:29:19.722496', '2026-07-04 15:29:19.722499')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 2.015s ago] ('trading_universe',)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 1.458s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:29:19.875173', None, None, 0, 'moomoo_snapshot_plus_yfinance_kline', None, '69d6d537-66fd-44fa-bf8c-a6c524758a08', '2026-07-04 15:29:19.875676', '2026-07-04 15:29:19.875679')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5939s ago] ('69d6d537-66fd-44fa-bf8c-a6c524758a08', 'MSFT', 'AVOID', 58.0, 'Price 319.7% above 20 SMA (> 15% max)', 419.53, 428.09, 408.09, None, 2000.0, 'Close below $408.09 or 20d return < SPY', 428.09, None, '2026-07-04 15:29:19.928088', 'momentum_relative_strength', 'moomoo_snapshot_plus_yfinance_kline', '2026-07-04 15:29:19.928009', '["AAPL", "MSFT"]', 'moomoo_quote_last_price', 'yfinance_cached_daily_bars', 1, 0, 0, '["price_too_far_above_sma20"]', 'OK', 58.0, '9037c5ae-9834-4b24-b426-44d1777344d6', '2026-07-04 15:29:19.928421', '2026-07-04 15:29:19.928423')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5921s ago] ('database', '2026-07-04 15:29:19.929644', '69d6d537-66fd-44fa-bf8c-a6c524758a08')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.596s ago] ('69d6d537-66fd-44fa-bf8c-a6c524758a08', 'AAPL', 'AVOID', 54.0, 'Price 106.9% above 20 SMA (> 15% max)', 206.78, 211.0, 191.0, None, 2000.0, 'Close below $191.00 or 20d return < SPY', 211.0, None, '2026-07-04 15:29:19.930332', 'momentum_relative_strength', 'moomoo_snapshot_plus_yfinance_kline', '2026-07-04 15:29:19.917916', '["AAPL", "MSFT"]', 'moomoo_quote_last_price', 'yfinance_cached_daily_bars', 1, 0, 0, '["price_too_far_above_sma20"]', 'OK', 54.0, '54c9dafc-7ebb-48b3-ab18-0d067d95c14d', '2026-07-04 15:29:19.930550', '2026-07-04 15:29:19.930551')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5903s ago (insertmanyvalues) 1/1 (unordered)] ('9037c5ae-9834-4b24-b426-44d1777344d6', 'Trend', 22.0, 25.0, 'SMA50=102.00, SMA200=102.00', 'c86ae076-b181-45c6-908b-ce33babce82a', '9037c5ae-9834-4b24-b426-44d1777344d6', 'Relative Strength', 8.0, 20.0, '20d=0.0%, 60d=0.0%', 'ab5fb44b-0cfc-4327-8428-336dd1ea3f7b', '9037c5ae-9834-4b24-b426-44d1777344d6', 'Volume Confirmation', 5.0, 10.0, 'Vol=1000000, Avg20=1000000', 'cc2a781f-8db7-4db8-b0cd-a08b6c45995c', '9037c5ae-9834-4b24-b426-44d1777344d6', 'Entry Quality', 5.0, 15.0, 'Distance from SMA20=319.7%', '4349d00d-7cd3-4100-8bf9-91632a714db1', '9037c5ae-9834-4b24-b426-44d1777344d6', 'Risk/Reward', 10.0, 15.0, 'Estimated from ATR-based volatility', 'b8d94239-aeff-4e3e-afba-a5a864794298', '9037c5ae-9834-4b24-b426-44d1777344d6', 'Market Regime', 8.0, 15.0, 'SPY 20d=0.0%', '61dd289b-3f34-478c-9fa9-64a77b8dd4da')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5914s ago (insertmanyvalues) 1/1 (unordered)] ('54c9dafc-7ebb-48b3-ab18-0d067d95c14d', 'Trend', 22.0, 25.0, 'SMA50=102.00, SMA200=102.00', 'd639816c-6f6b-4e0c-9740-6920f38909c6', '54c9dafc-7ebb-48b3-ab18-0d067d95c14d', 'Relative Strength', 8.0, 20.0, '20d=0.0%, 60d=0.0%', 'ea093ed0-1016-490f-8a4c-130c60baf51d', '54c9dafc-7ebb-48b3-ab18-0d067d95c14d', 'Volume Confirmation', 5.0, 10.0, 'Vol=1000000, Avg20=1000000', '14d71b3d-786b-452b-9692-791cc5e174ab', '54c9dafc-7ebb-48b3-ab18-0d067d95c14d', 'Entry Quality', 5.0, 15.0, 'Distance from SMA20=106.9%', 'e6c915c8-d2ff-4f46-89fa-24078efab6e0', '54c9dafc-7ebb-48b3-ab18-0d067d95c14d', 'Risk/Reward', 6.0, 15.0, 'Estimated from ATR-based volatility', '94b7dbd7-cc7a-4ed2-844f-bec6cfc27336', '54c9dafc-7ebb-48b3-ab18-0d067d95c14d', 'Market Regime', 8.0, 15.0, 'SPY 20d=0.0%', '3610930b-841a-4da9-b654-5695e2c0a309')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5892s ago] ('COMPLETED', 2, 2, '2026-07-04 15:29:19.932186', '2026-07-04 15:29:19.933046', '69d6d537-66fd-44fa-bf8c-a6c524758a08')
+2026-07-05 01:29:19 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:20 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 2 signals generated, 0 data errors
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 2.205s ago] ('trading_universe',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:20 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.055s ago] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.069s ago] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | DELETE FROM signals WHERE signals.id = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.068s ago] [('54c9dafc-7ebb-48b3-ab18-0d067d95c14d',), ('9037c5ae-9834-4b24-b426-44d1777344d6',)]
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | DELETE FROM app_settings WHERE app_settings."key" = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 2.228s ago] ('trading_universe',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO app_settings ("key", value, description, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.261s ago] ('trading_universe', '["AAPL", "MSFT"]', None, '4984b3e3-523c-4f63-bea8-37b754d6e5b8', '2026-07-04 15:29:20.083486', '2026-07-04 15:29:20.083487')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.256s ago] ('test', 'COMPLETED', 6, 6, '2026-07-04 15:29:20.079370', '2026-07-04 15:29:20.079370', None, 0, 'moomoo', None, 'b150c385-209f-4861-9589-64875fe6ba9c', '2026-07-04 15:29:20.084004', '2026-07-04 15:29:20.084005')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, p ... 608 characters truncated ... ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00021s (insertmanyvalues) 1/1 (unordered)] ('b150c385-209f-4861-9589-64875fe6ba9c', 'AAPL', 'BUY_STARTER', 80.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:20.079370', 'test', 'moomoo', None, None, None, None, 1, 0, 0, None, 'OK', None, '76593931-4eb5-40b7-aa21-accbfc4e181e', '2026-07-04 15:29:20.085245', '2026-07-04 15:29:20.085247', 'b150c385-209f-4861-9589-64875fe6ba9c', 'MSFT', 'WATCH', 60.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:20.079370', 'test', 'moomoo', None, None, None, None, 1 ... 74 parameters truncated ... None, None, None, None, None, '2026-07-04 15:29:20.079370', 'test', 'moomoo', None, None, None, None, 1, 0, 1, None, 'OK', None, '48cbb637-a85e-4470-b30c-fef50f4c0833', '2026-07-04 15:29:20.085255', '2026-07-04 15:29:20.085256', 'b150c385-209f-4861-9589-64875fe6ba9c', 'MSFT', 'WATCH', 60.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:20.079370', 'test', 'local_generated', None, None, None, None, 0, 0, 0, None, 'OK', None, '837fe033-edb4-4bcf-81bb-3c68da8f9dc7', '2026-07-04 15:29:20.085258', '2026-07-04 15:29:20.085259')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 2.383s ago] ('trading_universe',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals 
+WHERE signals.data_source IN (?, ?) AND signals.is_real_market_data = 1 AND signals.symbol IN (?, ?) ORDER BY signals.created_at DESC
+ LIMIT ? OFFSET ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.843s ago] ('moomoo_snapshot_plus_yfinance_kline', 'moomoo', 'AAPL', 'MSFT', 50, 0)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signal_scores.signal_id, signal_scores.category, signal_scores.score, signal_scores.max_score, signal_scores.details, signal_scores.id 
+FROM signal_scores 
+WHERE signal_scores.signal_id = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.256s ago] ('48cbb637-a85e-4470-b30c-fef50f4c0833',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signal_scores.signal_id, signal_scores.category, signal_scores.score, signal_scores.max_score, signal_scores.details, signal_scores.id 
+FROM signal_scores 
+WHERE signal_scores.signal_id = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.256s ago] ('7d5e8af2-37c2-4523-a7e9-1a01fa55f290',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:20 | INFO    | httpx | HTTP Request: GET http://test/api/v1/signals "HTTP/1.1 200 OK"
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 2.389s ago] ('trading_universe',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals ORDER BY signals.created_at DESC
+ LIMIT ? OFFSET ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.253s ago] (50, 0)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signal_scores.signal_id, signal_scores.category, signal_scores.score, signal_scores.max_score, signal_scores.details, signal_scores.id 
+FROM signal_scores 
+WHERE signal_scores.signal_id = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.261s ago] ('837fe033-edb4-4bcf-81bb-3c68da8f9dc7',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signal_scores.signal_id, signal_scores.category, signal_scores.score, signal_scores.max_score, signal_scores.details, signal_scores.id 
+FROM signal_scores 
+WHERE signal_scores.signal_id = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.262s ago] ('48cbb637-a85e-4470-b30c-fef50f4c0833',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signal_scores.signal_id, signal_scores.category, signal_scores.score, signal_scores.max_score, signal_scores.details, signal_scores.id 
+FROM signal_scores 
+WHERE signal_scores.signal_id = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.262s ago] ('7d1e7d26-cb41-484c-9baa-0ba6c07734d3',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:20 | INFO    | httpx | HTTP Request: GET http://test/api/v1/signals?include_local=true "HTTP/1.1 200 OK"
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 2.397s ago] ('trading_universe',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:29:20 | INFO    | httpx | HTTP Request: GET http://test/api/v1/market-data/status "HTTP/1.1 200 OK"
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.254s ago] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | DELETE FROM signals WHERE signals.id = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.253s ago] [('48cbb637-a85e-4470-b30c-fef50f4c0833',), ('76593931-4eb5-40b7-aa21-accbfc4e181e',), ('7d1e7d26-cb41-484c-9baa-0ba6c07734d3',), ('7d5e8af2-37c2-4523-a7e9-1a01fa55f290',), ('837fe033-edb4-4bcf-81bb-3c68da8f9dc7',), ('d30563ab-a1bc-486d-a321-10bd15d90a98',)]
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | DELETE FROM app_settings WHERE app_settings."key" = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 2.413s ago] ('trading_universe',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO app_settings ("key", value, description, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.445s ago] ('trading_universe', '["AAPL"]', None, '27c44ac7-1d95-4856-9445-0c4960869ce2', '2026-07-04 15:29:20.268210', '2026-07-04 15:29:20.268212')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.441s ago] ('test', 'COMPLETED', 4, 4, '2026-07-04 15:29:20.263951', '2026-07-04 15:29:20.263951', None, 0, 'moomoo', None, '53d606ae-c554-4f60-8df8-387e785b05f1', '2026-07-04 15:29:20.268724', '2026-07-04 15:29:20.268725')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00018s] ('53d606ae-c554-4f60-8df8-387e785b05f1', 'AAPL', 'BUY_STARTER', 80.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:20.263951', 'test', 'moomoo', None, None, None, None, 1, 0, 0, None, 'OK', None, '29d7b694-b350-4193-8372-c0eaf7d50483', '2026-07-04 15:29:20.269779', '2026-07-04 15:29:20.269780')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00017s] ('53d606ae-c554-4f60-8df8-387e785b05f1', 'MSFT', 'WATCH', 60.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:20.263951', 'test', 'local_generated', None, None, None, None, 0, 0, 0, None, 'OK', None, '7e1cb6e2-4916-4fb0-8ae7-399d9f5c84c0', '2026-07-04 15:29:20.270552', '2026-07-04 15:29:20.270553')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00017s] ('53d606ae-c554-4f60-8df8-387e785b05f1', 'NVDA', 'WATCH', 60.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:20.263951', 'test', 'moomoo', None, None, None, None, 0, 0, 0, None, 'OK', None, '589098c8-136f-496f-8401-14d14cbaee84', '2026-07-04 15:29:20.271248', '2026-07-04 15:29:20.271249')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 0.002066s ago] ('53d606ae-c554-4f60-8df8-387e785b05f1', 'AMZN', 'WATCH', 60.0, None, None, None, None, None, None, None, None, None, '2026-07-04 15:29:20.263951', 'test', 'moomoo', None, None, None, None, 1, 0, 0, None, 'OK', None, '03f5e818-6b65-484a-a1ed-f1b0ce92b1f4', '2026-07-04 15:29:20.271692', '2026-07-04 15:29:20.271693')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 2.547s ago] ('trading_universe',)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals 
+WHERE (signals.data_source IN (?, ?) OR signals.is_real_market_data = 0 OR (signals.symbol NOT IN (?))) AND NOT (signals.data_source IN (?, ?) AND signals.is_real_market_data = 1 AND signals.has_error = 0 AND signals.symbol IN (?))
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.193s ago] ('local_generated', 'mock', 'AAPL', 'moomoo', 'moomoo_snapshot_plus_yfinance_kline', 'AAPL')
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | DELETE FROM signals WHERE signals.id = ?
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.4s ago] [('03f5e818-6b65-484a-a1ed-f1b0ce92b1f4',), ('589098c8-136f-496f-8401-14d14cbaee84',), ('7e1cb6e2-4916-4fb0-8ae7-399d9f5c84c0',)]
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:29:20 | INFO    | httpx | HTTP Request: DELETE http://test/api/v1/signals/stale "HTTP/1.1 200 OK"
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | SELECT signals.strategy_run_id, signals.symbol, signals.verdict, signals.total_score, signals.reason, signals.entry_min, signals.entry_max, signals.stop_level, signals.target_size_pct, signals.risk_amount, signals.invalidation, signals.current_price, signals.approved, signals.signal_date, signals.strategy_name, signals.data_source, signals.generated_at, signals.universe_json, signals.price_source, signals.bar_source, signals.is_real_market_data, signals.is_tradeable, signals.has_error, signals.failed_filters, signals.data_quality_status, signals.calculated_score_before_filters, signals.id, signals.created_at, signals.updated_at 
+FROM signals
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | [cached since 1.518s ago] ()
+2026-07-05 01:29:20 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00053s] ('trading_universe',)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:48:31 | INFO    | httpx | HTTP Request: GET http://test/api/v1/market-data/status "HTTP/1.1 200 OK"
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [cached since 0.008364s ago] ('trading_universe',)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:48:31 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=NVDA "HTTP/1.1 200 OK"
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1706s ago] ('trading_universe',)
+2026-07-05 01:48:31 | ERROR   | app.services.kline.service | KLine fetch failed for SPY: 'coroutine' object has no attribute 'empty'
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:48:31 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [cached since 0.2004s ago] ('trading_universe',)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:48:31 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [cached since 0.2065s ago] ('trading_universe',)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:48:31 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [cached since 0.213s ago] ('trading_universe',)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00025s] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:48:31.300502', None, None, 0, 'local_generated', None, '610638ff-b121-4a30-97db-ac16a2409e8b', '2026-07-04 15:48:31.301609', '2026-07-04 15:48:31.301611')
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, error=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00021s] ('FAILED', 'SPY reference data unavailable: boom', '2026-07-04 15:48:31.305392', '610638ff-b121-4a30-97db-ac16a2409e8b')
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:48:31 | ERROR   | app.strategies.momentum_relative_strength | Screener failed: SPY reference data unavailable: boom
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | [cached since 0.2995s ago] ('trading_universe',)
+2026-07-05 01:48:31 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:48:31 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00046s] ('trading_universe',)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:49:56 | INFO    | httpx | HTTP Request: GET http://test/api/v1/market-data/status "HTTP/1.1 200 OK"
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.008572s ago] ('trading_universe',)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:49:56 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=NVDA "HTTP/1.1 200 OK"
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.01585s ago] ('trading_universe',)
+2026-07-05 01:49:56 | ERROR   | app.services.kline.service | KLine fetch failed for SPY: simulated yfinance failure
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:49:56 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.02133s ago] ('trading_universe',)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:49:56 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.0274s ago] ('trading_universe',)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:49:56 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.03386s ago] ('trading_universe',)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00028s] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:49:56.069532', None, None, 0, 'local_generated', None, '7729b787-b4e5-40d0-90ff-44115d5a9048', '2026-07-04 15:49:56.070983', '2026-07-04 15:49:56.070985')
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, error=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00028s] ('FAILED', 'SPY reference data unavailable: boom', '2026-07-04 15:49:56.075106', '7729b787-b4e5-40d0-90ff-44115d5a9048')
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:49:56 | ERROR   | app.strategies.momentum_relative_strength | Screener failed: SPY reference data unavailable: boom
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1237s ago] ('trading_universe',)
+2026-07-05 01:49:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:49:56 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00024s] ('trading_universe',)
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00028s] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:51:39.922757', None, None, 0, 'local_generated', None, '31c1eea7-4cb6-4a5d-9bd9-b7976e94d4d4', '2026-07-04 15:51:39.923898', '2026-07-04 15:51:39.923900')
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00034s] ('31c1eea7-4cb6-4a5d-9bd9-b7976e94d4d4', 'AAPL', 'AVOID', 47.1, 'Price below 50 SMA; 20d return -10.6% < SPY -3.4%; 60d return 16.2% < SPY 19.9%', 289.97, 295.887807393148, 281.09, None, 1479.78, 'Close below $281.09 or 20d return < SPY', 295.887807393148, None, '2026-07-04 15:51:39.929340', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:51:39.929323', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "underperforming_spy_20d", "underperforming_spy_60d"]', 'OK', 47.1, 'ea24a432-2990-449c-95d7-d808b424c999', '2026-07-04 15:51:39.930774', '2026-07-04 15:51:39.930777')
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00020s] ('database', '2026-07-04 15:51:39.932595', '31c1eea7-4cb6-4a5d-9bd9-b7976e94d4d4')
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00011s (insertmanyvalues) 1/1 (unordered)] ('ea24a432-2990-449c-95d7-d808b424c999', 'Trend', 10.0, 25.0, 'SMA50=304.07, SMA200=259.66', '5308e87b-6c1c-45f4-88a5-ad72cc67aabb', 'ea24a432-2990-449c-95d7-d808b424c999', 'Relative Strength', 8.0, 20.0, '20d=-10.6%, 60d=16.2%', 'e250ba6b-8278-4036-9baf-1cb6badc8e24', 'ea24a432-2990-449c-95d7-d808b424c999', 'Volume Confirmation', 10.0, 10.0, 'Vol=9373539, Avg20=5837959', 'b2340682-5fef-4fdd-bcdd-56572487d0f4', 'ea24a432-2990-449c-95d7-d808b424c999', 'Entry Quality', 7.0, 15.0, 'Distance from SMA20=-5.2%', '13f7c0f0-da9f-42a6-8f4a-94fe0daa6f99', 'ea24a432-2990-449c-95d7-d808b424c999', 'Risk/Reward', 8.073506609241239, 15.0, 'Estimated from volatility', '895a66ad-d32b-4699-911c-c9b362a22225', 'ea24a432-2990-449c-95d7-d808b424c999', 'Market Regime', 4.0, 15.0, 'SPY 20d=-3.4%', '4d7b876e-e390-4fff-ab2f-af00d0a3b5ad')
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00016s] ('COMPLETED', 1, 1, '2026-07-04 15:51:39.933488', '2026-07-04 15:51:39.935173', '31c1eea7-4cb6-4a5d-9bd9-b7976e94d4d4')
+2026-07-05 01:51:39 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:51:40 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1345s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:51:40 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1488s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1476s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:51:40.071047', None, None, 0, 'local_generated', None, '998b10bf-ab09-4394-86ce-afb7a7dfa45e', '2026-07-04 15:51:40.071253', '2026-07-04 15:51:40.071254')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1446s ago] ('998b10bf-ab09-4394-86ce-afb7a7dfa45e', 'AAPL', 'AVOID', 52.5, 'Price below 50 SMA; 20d return -10.6% < SPY -3.4%; 60d return 16.2% < SPY 19.9%', 289.97, 295.887807393148, 281.09, None, 1479.78, 'Close below $281.09 or 20d return < SPY', 295.887807393148, None, '2026-07-04 15:51:40.074723', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:51:40.074708', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "underperforming_spy_20d", "underperforming_spy_60d"]', 'OK', 52.5, 'b36bd4a6-945e-46e5-977d-275574df2408', '2026-07-04 15:51:40.075023', '2026-07-04 15:51:40.075024')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1436s ago] ('database', '2026-07-04 15:51:40.076003', '998b10bf-ab09-4394-86ce-afb7a7dfa45e')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1432s ago (insertmanyvalues) 1/1 (unordered)] ('b36bd4a6-945e-46e5-977d-275574df2408', 'Trend', 10.0, 25.0, 'SMA50=304.07, SMA200=259.66', '6e977f47-bb85-4386-8443-3d0c8e1a319a', 'b36bd4a6-945e-46e5-977d-275574df2408', 'Relative Strength', 8.0, 20.0, '20d=-10.6%, 60d=16.2%', '671e1879-f1ae-4830-8c70-9690dc4ac8e4', 'b36bd4a6-945e-46e5-977d-275574df2408', 'Volume Confirmation', 10.0, 10.0, 'Vol=9373539, Avg20=5837959', 'ea1431d7-742f-4d2c-bbd7-ef0f1e0cdf0e', 'b36bd4a6-945e-46e5-977d-275574df2408', 'Entry Quality', 7.0, 15.0, 'Distance from SMA20=-5.2%', 'f8eaa4b5-c71c-476e-a175-98af11741bbd', 'b36bd4a6-945e-46e5-977d-275574df2408', 'Risk/Reward', 13.512946355418627, 15.0, 'Estimated from volatility', '3601cca8-7ed2-4875-9d6e-e2c6c5904023', 'b36bd4a6-945e-46e5-977d-275574df2408', 'Market Regime', 4.0, 15.0, 'SPY 20d=-3.4%', '024c7abf-d82d-4817-bb50-c0610743dc71')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1432s ago] ('COMPLETED', 1, 1, '2026-07-04 15:51:40.076869', '2026-07-04 15:51:40.078168', '998b10bf-ab09-4394-86ce-afb7a7dfa45e')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:51:40 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3093s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:51:40 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3191s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:51:40 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=NVDA "HTTP/1.1 200 OK"
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3257s ago] ('trading_universe',)
+2026-07-05 01:51:40 | ERROR   | app.services.kline.service | KLine fetch failed for SPY: simulated yfinance failure
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:51:40 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3318s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:51:40 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3377s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:51:40 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3435s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3422s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:51:40.265674', None, None, 0, 'local_generated', None, '235c6a4f-15aa-4bb2-8cac-29f43c1e4fc5', '2026-07-04 15:51:40.265893', '2026-07-04 15:51:40.265894')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3393s ago] ('235c6a4f-15aa-4bb2-8cac-29f43c1e4fc5', 'AAPL', 'AVOID', 49.5, 'Price below 50 SMA; 20d return -10.6% < SPY -3.4%; 60d return 16.2% < SPY 19.9%', 289.97, 295.887807393148, 281.09, None, 1479.78, 'Close below $281.09 or 20d return < SPY', 295.887807393148, None, '2026-07-04 15:51:40.269493', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:51:40.269480', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "underperforming_spy_20d", "underperforming_spy_60d"]', 'OK', 49.5, 'bc11bb2c-d558-47d0-ad62-73fd6371382c', '2026-07-04 15:51:40.269790', '2026-07-04 15:51:40.269792')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3383s ago] ('database', '2026-07-04 15:51:40.270689', '235c6a4f-15aa-4bb2-8cac-29f43c1e4fc5')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3376s ago (insertmanyvalues) 1/1 (unordered)] ('bc11bb2c-d558-47d0-ad62-73fd6371382c', 'Trend', 10.0, 25.0, 'SMA50=304.07, SMA200=259.66', '4e9d70cf-fd08-440d-ba25-46c5394d4060', 'bc11bb2c-d558-47d0-ad62-73fd6371382c', 'Relative Strength', 8.0, 20.0, '20d=-10.6%, 60d=16.2%', '421286c2-bab4-4228-a0f7-6ee981fb89ee', 'bc11bb2c-d558-47d0-ad62-73fd6371382c', 'Volume Confirmation', 10.0, 10.0, 'Vol=9373539, Avg20=5837959', 'f7462102-a93a-4579-9973-844c8448a479', 'bc11bb2c-d558-47d0-ad62-73fd6371382c', 'Entry Quality', 7.0, 15.0, 'Distance from SMA20=-5.2%', '27271ba1-5d99-4327-b098-bed624a9ee9c', 'bc11bb2c-d558-47d0-ad62-73fd6371382c', 'Risk/Reward', 10.521366452761638, 15.0, 'Estimated from volatility', '4e73062e-ec53-4b1d-8400-54fb70f42547', 'bc11bb2c-d558-47d0-ad62-73fd6371382c', 'Market Regime', 4.0, 15.0, 'SPY 20d=-3.4%', '6714ece1-bd98-449c-b4c6-093bd0894600')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3374s ago] ('COMPLETED', 1, 1, '2026-07-04 15:51:40.271357', '2026-07-04 15:51:40.272409', '235c6a4f-15aa-4bb2-8cac-29f43c1e4fc5')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:51:40 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.4947s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:51:40 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5006s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.4996s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:51:40.422982', None, None, 0, 'local_generated', None, '7916dac3-81ce-4881-b043-74baf0d06681', '2026-07-04 15:51:40.423248', '2026-07-04 15:51:40.423250')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, error=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00026s] ('FAILED', 'SPY reference data unavailable: boom', '2026-07-04 15:51:40.427015', '7916dac3-81ce-4881-b043-74baf0d06681')
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:51:40 | ERROR   | app.strategies.momentum_relative_strength | Screener failed: SPY reference data unavailable: boom
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | [cached since 0.6097s ago] ('trading_universe',)
+2026-07-05 01:51:40 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:51:40 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00025s] ('trading_universe',)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00038s] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:52:56.147459', None, None, 0, 'local_generated', None, '443bf214-30c3-426d-aaf8-497e64c9c2df', '2026-07-04 15:52:56.148734', '2026-07-04 15:52:56.148736')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00036s] ('443bf214-30c3-426d-aaf8-497e64c9c2df', 'AAPL', 'AVOID', 60.8, 'Price below 50 SMA; 20d return -6.4% < SPY 15.0%; 60d return -3.6% < SPY 12.6%', 285.15, 290.97317744487316, 276.42, None, 1455.32, 'Close below $276.42 or 20d return < SPY', 290.97317744487316, None, '2026-07-04 15:52:56.154289', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:52:56.154270', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "underperforming_spy_20d", "underperforming_spy_60d"]', 'OK', 60.8, '8fa755e3-af57-4634-a9d8-3ab6003bc8f4', '2026-07-04 15:52:56.155754', '2026-07-04 15:52:56.155756')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00018s] ('database', '2026-07-04 15:52:56.157524', '443bf214-30c3-426d-aaf8-497e64c9c2df')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00012s (insertmanyvalues) 1/1 (unordered)] ('8fa755e3-af57-4634-a9d8-3ab6003bc8f4', 'Trend', 10.0, 25.0, 'SMA50=296.95, SMA200=256.67', 'ca6f045d-d1eb-4dfa-b79c-502c2415a90d', '8fa755e3-af57-4634-a9d8-3ab6003bc8f4', 'Relative Strength', 8.0, 20.0, '20d=-6.4%, 60d=-3.6%', '6c36b7d3-c6c9-4d3c-8de9-f34aedc9d55e', '8fa755e3-af57-4634-a9d8-3ab6003bc8f4', 'Volume Confirmation', 8.0, 10.0, 'Vol=7326364, Avg20=5940810', 'e354e259-13df-4095-aab4-ef18f25934a3', '8fa755e3-af57-4634-a9d8-3ab6003bc8f4', 'Entry Quality', 7.0, 15.0, 'Distance from SMA20=-0.2%', '5092c745-38f8-432c-a543-427cfe7b4310', '8fa755e3-af57-4634-a9d8-3ab6003bc8f4', 'Risk/Reward', 12.836712004566005, 15.0, 'Estimated from volatility', 'c4d8f381-2d7c-4cc3-8a5b-e3cc280eb566', '8fa755e3-af57-4634-a9d8-3ab6003bc8f4', 'Market Regime', 15.0, 15.0, 'SPY 20d=15.0%', '642c4422-d4a2-403c-8541-30e008995dfd')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00020s] ('COMPLETED', 1, 1, '2026-07-04 15:52:56.158429', '2026-07-04 15:52:56.160187', '443bf214-30c3-426d-aaf8-497e64c9c2df')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:52:56 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1648s ago] ('trading_universe',)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:52:56 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1794s ago] ('trading_universe',)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1781s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:52:56.326357', None, None, 0, 'local_generated', None, 'd05c2ad7-2807-4221-bbe6-0bd899522c82', '2026-07-04 15:52:56.326570', '2026-07-04 15:52:56.326571')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1752s ago] ('d05c2ad7-2807-4221-bbe6-0bd899522c82', 'AAPL', 'AVOID', 60.0, 'Price below 50 SMA; 20d return -6.4% < SPY 15.0%; 60d return -3.6% < SPY 12.6%', 285.15, 290.97317744487316, 276.42, None, 1455.32, 'Close below $276.42 or 20d return < SPY', 290.97317744487316, None, '2026-07-04 15:52:56.330327', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:52:56.330309', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "underperforming_spy_20d", "underperforming_spy_60d"]', 'OK', 60.0, '371ff4fa-7dbb-4d43-ae55-29c38a522343', '2026-07-04 15:52:56.330621', '2026-07-04 15:52:56.330622')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1743s ago] ('database', '2026-07-04 15:52:56.331609', 'd05c2ad7-2807-4221-bbe6-0bd899522c82')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1736s ago (insertmanyvalues) 1/1 (unordered)] ('371ff4fa-7dbb-4d43-ae55-29c38a522343', 'Trend', 10.0, 25.0, 'SMA50=296.95, SMA200=256.67', '20c12988-5f25-4ca5-bfcd-6cc85c72d5b6', '371ff4fa-7dbb-4d43-ae55-29c38a522343', 'Relative Strength', 8.0, 20.0, '20d=-6.4%, 60d=-3.6%', '6d4dd29a-1105-49c1-b692-27332bef4abb', '371ff4fa-7dbb-4d43-ae55-29c38a522343', 'Volume Confirmation', 8.0, 10.0, 'Vol=7326364, Avg20=5940810', '1e64ffe3-7164-4917-bf51-6fb040db38ad', '371ff4fa-7dbb-4d43-ae55-29c38a522343', 'Entry Quality', 7.0, 15.0, 'Distance from SMA20=-0.2%', '94eeea7c-3f15-4436-ac17-73d3521e307a', '371ff4fa-7dbb-4d43-ae55-29c38a522343', 'Risk/Reward', 12.015570268259044, 15.0, 'Estimated from volatility', '0e9a216b-6872-404a-8c44-c205b6c0ec77', '371ff4fa-7dbb-4d43-ae55-29c38a522343', 'Market Regime', 15.0, 15.0, 'SPY 20d=15.0%', 'b4eedcb8-fb07-4e9f-b349-c0cb630868b1')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1733s ago] ('COMPLETED', 1, 1, '2026-07-04 15:52:56.332264', '2026-07-04 15:52:56.333338', 'd05c2ad7-2807-4221-bbe6-0bd899522c82')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:52:56 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3399s ago] ('trading_universe',)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:52:56 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3465s ago] ('trading_universe',)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3452s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:52:56.493414', None, None, 0, 'local_generated', None, 'bc83b9ce-ea71-42f1-9f13-c6313ae861e8', '2026-07-04 15:52:56.493659', '2026-07-04 15:52:56.493660')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3432s ago] ('bc83b9ce-ea71-42f1-9f13-c6313ae861e8', 'AAPL', 'AVOID', 61.6, 'Price below 50 SMA; 20d return -6.4% < SPY 15.0%; 60d return -3.6% < SPY 12.6%', 285.15, 290.97317744487316, 276.42, None, 1455.32, 'Close below $276.42 or 20d return < SPY', 290.97317744487316, None, '2026-07-04 15:52:56.498365', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:52:56.498346', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "underperforming_spy_20d", "underperforming_spy_60d"]', 'OK', 61.6, '1bbb2cfa-c376-4d14-86ce-f60030309f5d', '2026-07-04 15:52:56.498673', '2026-07-04 15:52:56.498675')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3423s ago] ('database', '2026-07-04 15:52:56.499661', 'bc83b9ce-ea71-42f1-9f13-c6313ae861e8')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3416s ago (insertmanyvalues) 1/1 (unordered)] ('1bbb2cfa-c376-4d14-86ce-f60030309f5d', 'Trend', 10.0, 25.0, 'SMA50=296.95, SMA200=256.67', '407b9403-0f7d-4df9-a9dc-821b8ce953c8', '1bbb2cfa-c376-4d14-86ce-f60030309f5d', 'Relative Strength', 8.0, 20.0, '20d=-6.4%, 60d=-3.6%', 'a653d978-b830-44a8-b3b7-6f5e1ca47a91', '1bbb2cfa-c376-4d14-86ce-f60030309f5d', 'Volume Confirmation', 8.0, 10.0, 'Vol=7326364, Avg20=5940810', 'e5e2f2ab-bfd8-481f-92df-f7f5287f7cd8', '1bbb2cfa-c376-4d14-86ce-f60030309f5d', 'Entry Quality', 7.0, 15.0, 'Distance from SMA20=-0.2%', 'c7fc45cd-c129-43aa-9156-c0f9bb8cd8d8', '1bbb2cfa-c376-4d14-86ce-f60030309f5d', 'Risk/Reward', 13.550902240359648, 15.0, 'Estimated from volatility', '3f30ec60-ab49-47e8-8d87-cdab5d87db7a', '1bbb2cfa-c376-4d14-86ce-f60030309f5d', 'Market Regime', 15.0, 15.0, 'SPY 20d=15.0%', '8813d882-d0fa-4071-8d00-618302916ca8')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3415s ago] ('COMPLETED', 1, 1, '2026-07-04 15:52:56.500327', '2026-07-04 15:52:56.501531', 'bc83b9ce-ea71-42f1-9f13-c6313ae861e8')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:52:56 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5547s ago] ('trading_universe',)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:52:56 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5597s ago] ('trading_universe',)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.5581s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:52:56.706441', None, None, 0, 'local_generated', None, '4880ccdb-4745-4004-ad44-dbd035965710', '2026-07-04 15:52:56.706635', '2026-07-04 15:52:56.706637')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, error=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00017s] ('FAILED', 'SPY reference data unavailable: boom', '2026-07-04 15:52:56.709562', '4880ccdb-4745-4004-ad44-dbd035965710')
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:52:56 | ERROR   | app.strategies.momentum_relative_strength | Screener failed: SPY reference data unavailable: boom
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | [cached since 0.6708s ago] ('trading_universe',)
+2026-07-05 01:52:56 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:52:56 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("symbols")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("watchlist_items")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("bars_1d")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signals")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("signal_scores")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("strategy_runs")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("positions")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("orders")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("fills")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("portfolio_snapshots")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("risk_events")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("trade_journal_entries")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("app_settings")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | PRAGMA main.table_info("audit_logs")
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [raw sql] ()
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00026s] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00040s] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:56:58.240751', None, None, 0, 'local_generated', None, '501e7ea8-5bca-45a8-a8f4-9a6bca41eaa4', '2026-07-04 15:56:58.242106', '2026-07-04 15:56:58.242109')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00043s] ('501e7ea8-5bca-45a8-a8f4-9a6bca41eaa4', 'AAPL', 'AVOID', 41.8, 'Price below 50 SMA; Price below 200 SMA; 20d return -2.6% < SPY 10.0%; 60d return 13.4% < SPY 25.7%', 127.32, 129.9187841991946, 123.42, None, 649.88, 'Close below $123.42 or 20d return < SPY', 129.9187841991946, None, '2026-07-04 15:56:58.248164', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:56:58.248144', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "price_below_sma200", "underperforming_spy_20d", "underperforming_spy_60d"]', 'OK', 41.8, '4dedc270-d721-4869-a582-a54035408d92', '2026-07-04 15:56:58.249727', '2026-07-04 15:56:58.249733')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00029s] ('database', '2026-07-04 15:56:58.251926', '501e7ea8-5bca-45a8-a8f4-9a6bca41eaa4')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00017s (insertmanyvalues) 1/1 (unordered)] ('4dedc270-d721-4869-a582-a54035408d92', 'Trend', 0.0, 25.0, 'SMA50=131.24, SMA200=130.78', 'f2af5def-3977-4f31-9095-066bf94ffef0', '4dedc270-d721-4869-a582-a54035408d92', 'Relative Strength', 8.0, 20.0, '20d=-2.6%, 60d=13.4%', '8e964761-cf28-443e-a68d-8010f98ff332', '4dedc270-d721-4869-a582-a54035408d92', 'Volume Confirmation', 5.0, 10.0, 'Vol=4406975, Avg20=4755008', '5ad1f87b-b363-4eb7-b665-8ab515443650', '4dedc270-d721-4869-a582-a54035408d92', 'Entry Quality', 5.0, 15.0, 'Distance from SMA20=3.8%', '59574284-14e4-4e62-b095-271931e830c9', '4dedc270-d721-4869-a582-a54035408d92', 'Risk/Reward', 8.846789740338162, 15.0, 'Estimated from volatility', '97e5f008-807f-4680-9ebe-d6231f839feb', '4dedc270-d721-4869-a582-a54035408d92', 'Market Regime', 15.0, 15.0, 'SPY 20d=10.0%', '669c394f-b112-44a9-b16f-c92b1ce8ed81')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00025s] ('COMPLETED', 1, 1, '2026-07-04 15:56:58.253156', '2026-07-04 15:56:58.255618', '501e7ea8-5bca-45a8-a8f4-9a6bca41eaa4')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:56:58 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.153s ago] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:56:58 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.165s ago] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:56:58 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=NVDA "HTTP/1.1 200 OK"
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1718s ago] ('trading_universe',)
+2026-07-05 01:56:58 | ERROR   | app.services.kline.service | KLine fetch failed for SPY: simulated yfinance failure
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:56:58 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1785s ago] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:56:58 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1852s ago] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:56:58 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1932s ago] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1919s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:56:58.433464', None, None, 0, 'local_generated', None, '2ea406fa-64ad-456d-b147-9fc5ad29bf48', '2026-07-04 15:56:58.433728', '2026-07-04 15:56:58.433730')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1893s ago] ('2ea406fa-64ad-456d-b147-9fc5ad29bf48', 'AAPL', 'AVOID', 43.1, 'Price below 50 SMA; Price below 200 SMA; 20d return -2.6% < SPY 10.0%; 60d return 13.4% < SPY 25.7%', 127.32, 129.9187841991946, 123.42, None, 649.88, 'Close below $123.42 or 20d return < SPY', 129.9187841991946, None, '2026-07-04 15:56:58.438210', 'momentum_relative_strength', 'local_generated', '2026-07-04 15:56:58.438188', '["AAPL"]', 'mock_synthetic', 'mock_generated', 0, 0, 0, '["price_below_sma50", "price_below_sma200", "underperforming_spy_20d", "underperforming_spy_60d"]', 'OK', 43.1, '329b14fe-a4ca-4d4d-af2c-997ed23fb32a', '2026-07-04 15:56:58.438612', '2026-07-04 15:56:58.438615')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1883s ago] ('database', '2026-07-04 15:56:58.439932', '2ea406fa-64ad-456d-b147-9fc5ad29bf48')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1873s ago (insertmanyvalues) 1/1 (unordered)] ('329b14fe-a4ca-4d4d-af2c-997ed23fb32a', 'Trend', 0.0, 25.0, 'SMA50=131.24, SMA200=130.78', '8866b7d2-dde6-4e6b-9155-9251851a947f', '329b14fe-a4ca-4d4d-af2c-997ed23fb32a', 'Relative Strength', 8.0, 20.0, '20d=-2.6%, 60d=13.4%', 'fde44436-887a-4693-bc98-719b2b144ace', '329b14fe-a4ca-4d4d-af2c-997ed23fb32a', 'Volume Confirmation', 5.0, 10.0, 'Vol=4406975, Avg20=4755008', '93b509a1-4c7b-4f37-98b1-c8ad1a612256', '329b14fe-a4ca-4d4d-af2c-997ed23fb32a', 'Entry Quality', 5.0, 15.0, 'Distance from SMA20=3.8%', '470c0162-49f0-45d7-8945-2ca0aa4e8f02', '329b14fe-a4ca-4d4d-af2c-997ed23fb32a', 'Risk/Reward', 10.104959597318722, 15.0, 'Estimated from volatility', 'e9039f08-e02b-46f5-9c10-97673ece2d28', '329b14fe-a4ca-4d4d-af2c-997ed23fb32a', 'Market Regime', 15.0, 15.0, 'SPY 20d=10.0%', '15e4581f-b378-4fb7-bbbd-dbdc619f124d')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1865s ago] ('COMPLETED', 1, 1, '2026-07-04 15:56:58.440750', '2026-07-04 15:56:58.441951', '2ea406fa-64ad-456d-b147-9fc5ad29bf48')
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:56:58 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3884s ago] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:56:58 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.3946s ago] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:56:58 | INFO    | httpx | HTTP Request: GET http://test/api/v1/diagnostics/signal-pipeline?symbols=SPY "HTTP/1.1 200 OK"
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | [cached since 0.4001s ago] ('trading_universe',)
+2026-07-05 01:56:58 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:56:58 | INFO    | httpx | HTTP Request: GET http://test/api/v1/market-data/status "HTTP/1.1 200 OK"
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00052s] ('trading_universe',)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00035s] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:57:04.473446', None, None, 0, 'moomoo_snapshot_plus_yfinance_kline', None, 'f41d0ba0-c9bb-4290-b1be-32dc84e7107a', '2026-07-04 15:57:04.474596', '2026-07-04 15:57:04.474598')
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signals (strategy_run_id, symbol, verdict, total_score, reason, entry_min, entry_max, stop_level, target_size_pct, risk_amount, invalidation, current_price, approved, signal_date, strategy_name, data_source, generated_at, universe_json, price_source, bar_source, is_real_market_data, is_tradeable, has_error, failed_filters, data_quality_status, calculated_score_before_filters, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00036s] ('f41d0ba0-c9bb-4290-b1be-32dc84e7107a', 'AAPL', 'AVOID', 62.0, 'Price 109.4% above 20 SMA (> 15% max)', 205.17, 209.36, 205.36, None, 400.0, 'Close below $205.36 or 20d return < SPY', 209.36, None, '2026-07-04 15:57:04.493006', 'momentum_relative_strength', 'moomoo_snapshot_plus_yfinance_kline', '2026-07-04 15:57:04.492862', '["AAPL"]', 'moomoo_quote_last_price', 'yfinance_cached_daily_bars', 1, 0, 0, '["price_too_far_above_sma20"]', 'OK', 62.0, 'bd3d0623-c178-4868-a86a-300fd0991d2b', '2026-07-04 15:57:04.494281', '2026-07-04 15:57:04.494283')
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00019s] ('database', '2026-07-04 15:57:04.496103', 'f41d0ba0-c9bb-4290-b1be-32dc84e7107a')
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | INSERT INTO signal_scores (signal_id, category, score, max_score, details, id) VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00013s (insertmanyvalues) 1/1 (unordered)] ('bd3d0623-c178-4868-a86a-300fd0991d2b', 'Trend', 22.0, 25.0, 'SMA50=100.00, SMA200=100.00', '7aae30da-181a-47e2-a3ee-a98a9461f17b', 'bd3d0623-c178-4868-a86a-300fd0991d2b', 'Relative Strength', 8.0, 20.0, '20d=0.0%, 60d=0.0%', 'e268f2d0-fa7e-46af-96e2-d81038f3ec57', 'bd3d0623-c178-4868-a86a-300fd0991d2b', 'Volume Confirmation', 5.0, 10.0, 'Vol=1000000, Avg20=1000000', '25337d9e-df9d-4762-8173-e1535a33423d', 'bd3d0623-c178-4868-a86a-300fd0991d2b', 'Entry Quality', 5.0, 15.0, 'Distance from SMA20=109.4%', 'e5be2edf-a914-4ef8-afad-54758182d934', 'bd3d0623-c178-4868-a86a-300fd0991d2b', 'Risk/Reward', 14.0, 15.0, 'Estimated from ATR-based volatility', '03fde00a-a9fc-44d5-84fd-6b23316d93eb', 'bd3d0623-c178-4868-a86a-300fd0991d2b', 'Market Regime', 8.0, 15.0, 'SPY 20d=0.0%', '208641d4-fde6-4cd7-aed0-95b0ec30e3a6')
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, symbols_screened=?, signals_generated=?, completed_at=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00016s] ('COMPLETED', 1, 1, '2026-07-04 15:57:04.497015', '2026-07-04 15:57:04.498678', 'f41d0ba0-c9bb-4290-b1be-32dc84e7107a')
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:57:04 | INFO    | app.strategies.momentum_relative_strength | Screener complete: 1 signals generated, 0 data errors
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1725s ago] ('trading_universe',)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:57:04 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1784s ago] ('trading_universe',)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | INSERT INTO strategy_runs (strategy_name, status, symbols_screened, signals_generated, started_at, completed_at, error, data_error_count, data_source, universe_source, id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [cached since 0.1764s ago] ('momentum_relative_strength', 'RUNNING', 0, 0, '2026-07-04 15:57:04.650584', None, None, 0, 'local_generated', None, 'e1edbe93-44c2-4acd-9343-1d300d2c4b3a', '2026-07-04 15:57:04.650790', '2026-07-04 15:57:04.650791')
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | UPDATE strategy_runs SET status=?, completed_at=?, error=?, universe_source=?, updated_at=? WHERE strategy_runs.id = ?
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [generated in 0.00021s] ('FAILED', '2026-07-04 15:57:04.653626', 'SPY reference data unavailable', 'database', '2026-07-04 15:57:04.654028', 'e1edbe93-44c2-4acd-9343-1d300d2c4b3a')
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | COMMIT
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | BEGIN (implicit)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | SELECT app_settings."key", app_settings.value, app_settings.description, app_settings.id, app_settings.created_at, app_settings.updated_at 
+FROM app_settings 
+WHERE app_settings."key" = ?
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | [cached since 0.2971s ago] ('trading_universe',)
+2026-07-05 01:57:04 | INFO    | sqlalchemy.engine.Engine | ROLLBACK
+2026-07-05 01:57:04 | INFO    | httpx | HTTP Request: POST http://test/api/v1/signals/run "HTTP/1.1 200 OK"

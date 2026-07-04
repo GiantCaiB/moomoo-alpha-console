@@ -93,6 +93,18 @@ export interface SignalResponse {
   approved: boolean | null;
   signal_date: string;
   created_at: string;
+  strategy_name: string | null;
+  data_source: string | null;
+  generated_at: string | null;
+  universe: string[] | null;
+  price_source: string | null;
+  bar_source: string | null;
+  is_real_market_data: boolean;
+  is_tradeable: boolean;
+  has_error: boolean;
+  failed_filters: string[] | null;
+  data_quality_status: string;
+  calculated_score_before_filters: number | null;
 }
 
 export interface RiskStatusResponse {
@@ -120,6 +132,39 @@ export interface RiskEvent {
   event_time: string;
 }
 
+export interface TradingUniverseResponse {
+  symbols: string[];
+  source: string;
+}
+
+export interface RuntimeStatusResponse {
+  broker_mode: string;
+  broker_adapter: string;
+  market_data_provider: string;
+  research_provider: string;
+  mock_enabled: boolean;
+  data_source: string;
+  account_environment: string;
+  read_only: boolean;
+  is_live_trading_enabled: boolean;
+  trading_universe_count: number;
+  universe_source: string;
+}
+
+export interface RunSignalsResponse {
+  success: boolean;
+  strategy_run_id: string;
+  provider: string;
+  market_data_provider: string;
+  data_source: string;
+  universe_source: string;
+  symbols_scanned: string[];
+  signals_generated: number;
+  data_error_count: number;
+  status: string;
+  error: string | null;
+}
+
 export interface WatchlistItemResponse {
   id: string;
   symbol: string;
@@ -143,6 +188,20 @@ export interface Quote {
   last: number | null;
   change: number | null;
   change_pct: number | null;
+}
+
+export interface MarketDataStatusResponse {
+  provider: string;
+  cache_enabled: boolean;
+  lookback_days: number;
+  extended_lookback_days: number;
+  requests: number;
+  cache_hits: number;
+  cache_misses: number;
+  upstream_fetches: number;
+  failed: number;
+  latest_successful_fetch: string | null;
+  per_symbol: Record<string, { bars: number; source: string; last_checked: string }>;
 }
 
 export interface BrokerHealthResponse {

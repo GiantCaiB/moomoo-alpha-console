@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 try:
     import moomoo as ft
     MOOMOO_SDK_AVAILABLE = True
-except ImportError:
+except Exception:
     ft = None
     MOOMOO_SDK_AVAILABLE = False
     logger.warning("Moomoo SDK not installed. MoomooBrokerAdapter will be unavailable.")

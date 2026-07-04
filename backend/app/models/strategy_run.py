@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String, Float, DateTime, Text
+from sqlalchemy import String, DateTime, Text, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UUIDMixin, TimestampMixin
 
@@ -18,3 +18,6 @@ class StrategyRun(Base, UUIDMixin, TimestampMixin):
         DateTime(timezone=True), nullable=True
     )
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    data_error_count: Mapped[int] = mapped_column(Integer, default=0)
+    data_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    universe_source: Mapped[str | None] = mapped_column(String(20), nullable=True)

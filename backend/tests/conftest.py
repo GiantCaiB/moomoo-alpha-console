@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime, timezone
 
+from app.core.config import settings
 from app.services.broker.mock import MockBrokerAdapter
 from app.services.risk.engine import RiskEngine, OrderCheckContext
 from app.services.broker.base import AccountSummary, QuoteDto
@@ -13,7 +14,8 @@ def broker():
 
 
 @pytest.fixture
-def risk_engine():
+def risk_engine(monkeypatch):
+    monkeypatch.setattr(settings, "universe_symbols", ["AAPL"])
     return RiskEngine()
 
 
@@ -92,9 +94,61 @@ def api_risk_engine():
 
 
 @pytest.fixture
-def api_app(api_broker, api_risk_engine):
+def api_market_data():
+    """Mock market data provider for API tests that need runtime/status."""
+    from app.services.market_data.moomoo import MoomooMarketDataProvider
+    return MoomooMarketDataProvider()
+
+
+@pytest.fixture
+def api_kline_service():
+    from app.services.kline.service import KLineService
+    from app.services.kline.yfinance_provider import YFinanceKLineProvider
+
+    class FakeYFinanceProvider:
+        def get_daily_bars(self, symbol, start_date, end_date, adjusted=True):
+            import pandas as pd
+            from datetime import timedelta
+            dates = []
+            current = start_date
+            while current <= end_date:
+                dates.append(current)
+                current += timedelta(days=1)
+            return pd.DataFrame({
+                "date": dates,
+                "open": [100.0] * len(dates),
+                "high": [105.0] * len(dates),
+                "low": [95.0] * len(dates),
+                "close": [102.0] * len(dates),
+                "volume": [1_000_000] * len(dates),
+                "adj_close": [102.0] * len(dates),
+            })
+
+    service = KLineService(provider=FakeYFinanceProvider(), enable_cache=False)
+    return service
+
+
+@pytest.fixture
+def api_app(api_broker, api_risk_engine, api_market_data, api_kline_service):
     from app.main import app
-    from app.api.dependencies import set_broker, set_risk_engine
+    from app.api.dependencies import (
+        set_broker,
+        set_risk_engine,
+        set_market_data,
+        set_kline_service,
+        set_runtime_state,
+        set_trading_universe_resolver,
+        set_price_resolver,
+    )
+    from app.services.runtime.state import RuntimeStateService
+    from app.services.settings.trading_universe import TradingUniverseResolver
+    from app.services.market_data.price_resolver import PriceResolver
     set_broker(api_broker)
     set_risk_engine(api_risk_engine)
+    set_market_data(api_market_data)
+    set_kline_service(api_kline_service)
+    resolver = TradingUniverseResolver()
+    set_trading_universe_resolver(resolver)
+    set_price_resolver(PriceResolver(api_broker, api_kline_service))
+    set_runtime_state(RuntimeStateService(api_broker, api_kline_service, resolver))
     return app
