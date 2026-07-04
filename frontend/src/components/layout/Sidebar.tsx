@@ -5,23 +5,22 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   TrendingUp,
-  Eye,
   Briefcase,
   ListOrdered,
   ShieldAlert,
   FlaskConical,
   Settings,
+  Lock,
 } from "lucide-react";
 import { useBrokerHealth } from "@/app/providers";
 
 const links = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/signals", label: "Signals", icon: TrendingUp },
-  { href: "/watchlist", label: "Watchlist", icon: Eye },
-  { href: "/positions", label: "Positions", icon: Briefcase },
+  { href: "/", label: "Cockpit", icon: LayoutDashboard },
+  { href: "/signals", label: "Entry Signals", icon: TrendingUp },
+  { href: "/positions", label: "Portfolio", icon: Briefcase },
   { href: "/orders", label: "Orders", icon: ListOrdered },
   { href: "/risk", label: "Risk", icon: ShieldAlert },
-  { href: "/backtests", label: "Backtests", icon: FlaskConical },
+  { href: "/backtests", label: "Labs", icon: FlaskConical },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -36,10 +35,10 @@ export default function Sidebar() {
   let dotClass = "status-dot-green";
 
   if (env === "moomoo_real") {
-    modeLabel = connected ? "Moomoo Real (R/O)" : "Moomoo Disconnected";
+    modeLabel = connected ? "Real Account (R/O)" : "Moomoo Disconnected";
     dotClass = connected ? "status-dot-green" : "status-dot-red";
   } else if (env === "moomoo_simulate") {
-    modeLabel = connected ? "Moomoo Sim (R/O)" : "Moomoo Disconnected";
+    modeLabel = connected ? "Sim Account (R/O)" : "Moomoo Disconnected";
     dotClass = connected ? "status-dot-amber" : "status-dot-red";
   } else if (env === "moomoo_disconnected") {
     modeLabel = "Moomoo Disconnected";
@@ -50,12 +49,12 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-56 h-screen glassy border-l-0 border-t-0 border-b-0 flex flex-col py-6 px-3 fixed left-0 top-0 z-40">
+    <aside className="w-60 h-screen glassy border-l-0 border-t-0 border-b-0 flex flex-col py-6 px-3 fixed left-0 top-0 z-40">
       <div className="px-4 mb-8">
-        <h1 className="text-lg font-bold text-accent-green font-mono tracking-tight">
-          Moomoo<span className="text-text-primary"> Alpha</span>
+        <h1 className="text-xl font-semibold text-text-primary tracking-tight">
+          Alpha <span className="text-accent-green">Cockpit</span>
         </h1>
-        <p className="text-xs text-text-muted mt-0.5">Console v0.1.0</p>
+        <p className="text-xs text-text-muted mt-1">Read-only research console</p>
       </div>
 
       <nav className="flex-1 space-y-1">
@@ -77,10 +76,14 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="px-4 pt-4 border-t border-surface-border">
+      <div className="px-4 pt-4 border-t border-surface-border space-y-3">
         <div className="flex items-center gap-2">
           <span className={`status-dot ${dotClass}`} />
           <span className="text-xs text-text-muted">{modeLabel}</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-hover/40 px-3 py-2 text-xs text-text-secondary">
+          <Lock size={12} className="text-accent-amber" />
+          <span>Read-only active</span>
         </div>
       </div>
     </aside>

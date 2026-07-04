@@ -3,8 +3,8 @@ import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Moomoo Alpha Console",
-  description: "Local-first trading console for US stock swing trading",
+  title: "Alpha Cockpit",
+  description: "Read-only trading research console",
 };
 
 export default function RootLayout({

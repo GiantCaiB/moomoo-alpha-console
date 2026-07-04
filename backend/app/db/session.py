@@ -61,6 +61,8 @@ async def init_db() -> None:
         Fill,
         Order,
         PortfolioSnapshot,
+        PositionLifecycleState,
+        PositionManagementSignal,
         Position,
         RiskEvent,
         Signal,

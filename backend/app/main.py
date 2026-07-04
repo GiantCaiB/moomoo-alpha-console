@@ -37,6 +37,7 @@ from app.api import (
     positions_router,
     orders_router,
     signals_router,
+    position_signals_router,
     risk_router,
     watchlist_router,
     settings_router,
@@ -136,6 +137,7 @@ app.include_router(portfolio_router)
 app.include_router(positions_router)
 app.include_router(orders_router)
 app.include_router(signals_router)
+app.include_router(position_signals_router)
 app.include_router(risk_router)
 app.include_router(watchlist_router)
 app.include_router(settings_router)

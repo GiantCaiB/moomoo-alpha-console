@@ -4,6 +4,7 @@ from app.api.routes.portfolio import router as portfolio_router
 from app.api.routes.positions import router as positions_router
 from app.api.routes.orders import router as orders_router
 from app.api.routes.signals import router as signals_router
+from app.api.routes.position_signals import router as position_signals_router
 from app.api.routes.risk import router as risk_router
 from app.api.routes.watchlist import router as watchlist_router
 from app.api.routes.settings import router as settings_router
@@ -19,6 +20,7 @@ __all__ = [
     "positions_router",
     "orders_router",
     "signals_router",
+    "position_signals_router",
     "risk_router",
     "watchlist_router",
     "settings_router",

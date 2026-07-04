@@ -107,20 +107,20 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
+        <h2 className="text-2xl font-semibold text-text-primary">Settings</h2>
         <p className="text-sm text-text-muted mt-1">
-          Application configuration
+          Connection, universe, risk, and market data settings.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <GlassyCard title="Broker Configuration">
+        <GlassyCard title="Connection">
           {isLoading ? (
             <div className="h-20 bg-surface-hover animate-pulse rounded" />
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-text-secondary">Mode</span>
+                <span className="text-sm text-text-secondary">Broker Mode</span>
                 <span className="text-sm font-mono text-accent-green">
                   {config?.broker_mode?.toUpperCase() || "MOCK"}
                 </span>
@@ -147,13 +147,13 @@ export default function SettingsPage() {
           )}
         </GlassyCard>
 
-        <GlassyCard title="Broker Health">
+        <GlassyCard title="Connection Health">
           {bhLoading ? (
             <div className="h-20 bg-surface-hover animate-pulse rounded" />
           ) : brokerHealth ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-text-secondary">Status</span>
+                <span className="text-sm text-text-secondary">Moomoo Connection</span>
                 <div className="flex items-center gap-2">
                   {brokerHealth.connected ? (
                     <CheckCircle size={16} className="text-accent-green" />
@@ -208,7 +208,7 @@ export default function SettingsPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-text-secondary">Read-Only</span>
+                <span className="text-sm text-text-secondary">Read-only</span>
                 <span className="text-sm font-mono text-accent-amber">
                   {brokerHealth.read_only ? "YES" : "NO"}
                 </span>
@@ -296,6 +296,9 @@ export default function SettingsPage() {
 
         <GlassyCard title="Trading Universe">
           <div className="space-y-3">
+            <p className="text-xs text-text-muted">
+              These symbols are scanned by Entry Signals. Position Management uses your actual holdings.
+            </p>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -309,9 +312,9 @@ export default function SettingsPage() {
               />
               <button
                 onClick={handleAdd}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl
                            bg-accent-blue/10 text-accent-blue text-sm font-medium
-                           border border-accent-blue/30 hover:bg-accent-blue/20"
+                           border border-accent-blue/25 hover:bg-accent-blue/15"
               >
                 <Plus size={14} />
                 Add
@@ -322,7 +325,7 @@ export default function SettingsPage() {
               {symbols.map((sym) => (
                 <span
                   key={sym}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl
                              bg-surface-hover text-sm font-mono text-text-primary
                              border border-surface-border"
                 >
@@ -347,7 +350,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleReset}
                   disabled={resetMutation.isPending}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl
                              bg-surface-hover text-text-muted text-xs font-medium
                              hover:text-accent-amber transition-colors
                              disabled:opacity-40 disabled:cursor-not-allowed"
@@ -359,9 +362,9 @@ export default function SettingsPage() {
               <button
                 onClick={handleSave}
                 disabled={saveMutation.isPending}
-                className="flex items-center gap-1 px-4 py-1.5 rounded-lg
+                className="flex items-center gap-1 px-4 py-1.5 rounded-xl
                            bg-accent-green/10 text-accent-green text-sm font-medium
-                           border border-accent-green/30 hover:bg-accent-green/20
+                           border border-accent-green/25 hover:bg-accent-green/15
                            disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Save size={14} />
@@ -378,7 +381,7 @@ export default function SettingsPage() {
             {saveSuccess && (
               <div className="flex items-center gap-1.5 text-xs text-accent-green">
                 <CheckCircle size={12} />
-                <span>Trading universe saved. Run Screener to apply changes.</span>
+                <span>Trading universe saved. Run Entry Screener to apply changes.</span>
               </div>
             )}
             {universeData?.source === "default" && symbols.length > 0 && (
@@ -394,7 +397,7 @@ export default function SettingsPage() {
           </div>
         </GlassyCard>
 
-        <GlassyCard title="Allowed Order Types">
+        <GlassyCard title="Order Safety">
           {isLoading ? (
             <div className="h-20 bg-surface-hover animate-pulse rounded" />
           ) : (
@@ -412,9 +415,12 @@ export default function SettingsPage() {
           )}
         </GlassyCard>
 
-        <GlassyCard title="K-Line Data Provider">
+        <GlassyCard title="Market Data">
           {mdStatus ? (
             <div className="space-y-3">
+              <p className="text-xs text-text-muted">
+                K-Line Data Provider, cache, and runtime metrics.
+              </p>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-text-secondary">Provider</span>
                 <span className="text-sm font-mono text-accent-green">
@@ -460,6 +466,9 @@ export default function SettingsPage() {
                   <div className="bg-surface-hover rounded p-2">
                     <div className="text-lg font-mono text-accent-red">{mdStatus.failed}</div>
                     <div className="text-xs text-text-muted">Failed</div>
+                  </div>
+                  <div className="col-span-2 text-xs text-text-muted">
+                    Runtime metrics reset when the backend restarts.
                   </div>
                   {mdStatus.latest_successful_fetch && (
                     <div className="bg-surface-hover rounded p-2 col-span-2">

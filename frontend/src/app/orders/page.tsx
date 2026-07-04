@@ -36,35 +36,25 @@ export default function OrdersPage() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-text-primary">Orders</h2>
+        <h2 className="text-2xl font-semibold text-text-primary">Orders</h2>
         <p className="text-sm text-text-muted mt-1">
-          Order history &amp; status ({orders?.length || 0} total)
+          Open and historical orders from moomoo. Read-only.
         </p>
       </div>
 
       {readOnly && (
-        <div className="mb-4 px-4 py-2.5 rounded-lg bg-accent-amber/10 border border-accent-amber/30 text-accent-amber text-sm flex items-center gap-2">
+        <div className="mb-4 px-4 py-2.5 rounded-xl bg-accent-amber/10 border border-accent-amber/25 text-accent-amber text-sm flex items-center gap-2">
           <ShieldBan size={16} />
-          {health?.account_environment === "moomoo_real"
-            ? "MOOMOO REAL READ-ONLY — Orders are displayed from moomoo. Manage/cancel orders in the moomoo app."
-            : "Read-only mode — orders are displayed for reference. Order actions are disabled."}
+          Read-only: manage or cancel orders in the moomoo app.
         </div>
       )}
 
       {isLoading ? (
         <div className="h-40 bg-surface-hover animate-pulse rounded-xl" />
       ) : (
-        <div className="space-y-4">
-          {rejected.length > 0 && (
-            <GlassyCard title="Rejected" neon="red">
-              {rejected.map((o) => (
-                <OrderRow key={o.id} order={o} readOnly={readOnly} />
-              ))}
-            </GlassyCard>
-          )}
-
+      <div className="space-y-4">
           {pending.length > 0 && (
-            <GlassyCard title="Pending" neon="green">
+            <GlassyCard title="Pending" neon="amber">
               {pending.map((o) => (
                 <OrderRow
                   key={o.id}
@@ -104,10 +94,18 @@ export default function OrdersPage() {
             </GlassyCard>
           )}
 
+          {rejected.length > 0 && (
+            <GlassyCard title="Rejected" neon="red">
+              {rejected.map((o) => (
+                <OrderRow key={o.id} order={o} readOnly={readOnly} />
+              ))}
+            </GlassyCard>
+          )}
+
           {orders?.length === 0 && (
             <GlassyCard>
               <div className="text-center py-12 text-text-muted text-sm">
-                No orders yet. Generate signals and approve them to create orders.
+                No orders yet. Open orders are managed in moomoo.
               </div>
             </GlassyCard>
           )}
@@ -129,7 +127,7 @@ function OrderRow({
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-surface-border/30 last:border-0">
       <div className="flex items-center gap-3">
-        <span className="font-mono font-bold text-sm">{order.symbol}</span>
+        <span className="font-mono font-bold text-sm text-text-primary">{order.symbol}</span>
         <span
           className={`text-xs font-mono ${
             order.side === "BUY" ? "value-up" : "value-down"
@@ -140,12 +138,12 @@ function OrderRow({
         <StatusBadge status={order.status} />
       </div>
       <div className="flex items-center gap-4 text-xs font-mono text-text-secondary">
-        <span>
-          {order.quantity ?? "--"} @{" "}
-          <PriceDisplay value={order.limit_price} prefix="$" />
-        </span>
+        <span>{order.quantity ?? "--"} @ <PriceDisplay value={order.limit_price} prefix="$" /></span>
         <span>
           Filled: {order.filled_quantity}/{order.quantity}
+        </span>
+        <span>
+          {new Date(order.created_at).toLocaleString()}
         </span>
         {order.reason && (
           <span className="text-text-muted max-w-xs truncate" title={order.reason}>
@@ -153,8 +151,9 @@ function OrderRow({
           </span>
         )}
         {readOnly ? (
-          <span className="text-text-muted text-xs italic">
-            Read-only — cancel in moomoo app
+          <span className="inline-flex items-center gap-1 text-text-muted text-xs">
+            <ShieldBan size={12} />
+            Locked
           </span>
         ) : onCancel ? (
           <button

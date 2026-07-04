@@ -107,6 +107,46 @@ export interface SignalResponse {
   calculated_score_before_filters: number | null;
 }
 
+export interface PositionManagementSignalResponse {
+  id: string | null;
+  symbol: string;
+  signal: string;
+  reason: string | null;
+  current_price: number | null;
+  avg_cost: number | null;
+  quantity: number | null;
+  gain_pct: number | null;
+  suggested_action: string | null;
+  suggested_quantity: number | null;
+  suggested_trim_pct: number | null;
+  tail_mode: boolean;
+  weekly_close: number | null;
+  weekly_sma20: number | null;
+  weekly_sma30: number | null;
+  drawdown_from_high: number | null;
+  original_cost_basis: number | null;
+  highest_price_since_entry: number | null;
+  tail_started_at: string | null;
+  trim_25_done: boolean | null;
+  trim_50_done: boolean | null;
+  trim_75_done: boolean | null;
+  data_source: string | null;
+  price_source: string | null;
+  bar_source: string | null;
+  is_real_market_data: boolean;
+  generated_at: string;
+  created_at: string;
+}
+
+export interface PositionSignalRunResponse {
+  status: string;
+  positions_scanned: number;
+  signals_generated: number;
+  data_error_count: number;
+  read_only: boolean;
+  error: string | null;
+}
+
 export interface RiskStatusResponse {
   kill_switch_enabled: boolean;
   broker_connected: boolean;
@@ -163,6 +203,15 @@ export interface RunSignalsResponse {
   data_error_count: number;
   status: string;
   error: string | null;
+}
+
+export interface StaleSignalCountResponse {
+  stale_count: number;
+  local_or_mock_count: number;
+  out_of_universe_count: number;
+  stale_symbols: string[];
+  local_or_mock_symbols: string[];
+  out_of_universe_symbols: string[];
 }
 
 export interface WatchlistItemResponse {

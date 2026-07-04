@@ -1,9 +1,10 @@
 import json
+from collections import OrderedDict
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select
 
-from app.schemas.signal import SignalResponse, SignalScoreResponse
+from app.schemas.signal import SignalResponse, SignalScoreResponse, StaleSignalCountResponse
 from app.models.signal import Signal
 from app.models.signal_score import SignalScore
 from app.db.session import get_session
@@ -12,6 +13,9 @@ from app.strategies.momentum_relative_strength import run_momentum_screener
 from app.services.kline.symbol_map import normalize_symbol
 
 router = APIRouter()
+
+STALE_LOCAL_DATA_SOURCES = {"local_generated", "mock"}
+REAL_SIGNAL_DATA_SOURCES = {"moomoo", "moomoo_snapshot_plus_yfinance_kline"}
 
 
 @router.get("/api/v1/signals", response_model=list[SignalResponse])
@@ -118,30 +122,66 @@ async def run_signals(session: AsyncSession = Depends(get_session)):
     }
 
 
+@router.get("/api/v1/signals/stale-count", response_model=StaleSignalCountResponse)
+async def stale_signal_count(session: AsyncSession = Depends(get_session)):
+    runtime_state = await get_runtime_state().build(session)
+    stale_rows = await _load_stale_signals(session, runtime_state.trading_universe)
+    local_or_mock_rows = [
+        row for row in stale_rows
+        if (row.data_source in STALE_LOCAL_DATA_SOURCES) or row.is_real_market_data is False
+    ]
+    out_of_universe_rows = [
+        row for row in stale_rows
+        if row.symbol not in runtime_state.trading_universe
+    ]
+    return StaleSignalCountResponse(
+        stale_count=len(stale_rows),
+        local_or_mock_count=len(local_or_mock_rows),
+        out_of_universe_count=len(out_of_universe_rows),
+        stale_symbols=_unique_symbols(stale_rows),
+        local_or_mock_symbols=_unique_symbols(local_or_mock_rows),
+        out_of_universe_symbols=_unique_symbols(out_of_universe_rows),
+    )
+
+
 @router.delete("/api/v1/signals/stale")
 async def delete_stale_signals(session: AsyncSession = Depends(get_session)):
-    """Dev cleanup — removes test artifacts, non-real, and out-of-universe signals.
-    
-    Never deletes valid moomoo real signals inside the current trading universe.
-    """
-    universe = (await get_runtime_state().build(session)).trading_universe
-    stale = select(Signal).where(and_(
-        or_(
-            Signal.data_source.in_(["local_generated", "mock"]),
-            Signal.is_real_market_data == False,
-            ~Signal.symbol.in_(universe),
-        ),
-        ~and_(
-            Signal.data_source.in_(["moomoo", "moomoo_snapshot_plus_yfinance_kline"]),
-            Signal.is_real_market_data == True,
-            Signal.has_error == False,
-            Signal.symbol.in_(universe),
-        ),
-    ))
-    result = await session.execute(stale)
-    signals = result.scalars().all()
+    """Remove stale signals using the same semantics as stale-count."""
+    runtime_state = await get_runtime_state().build(session)
+    signals = await _load_stale_signals(session, runtime_state.trading_universe)
     count = len(signals)
     for sig in signals:
         await session.delete(sig)
     await session.commit()
     return {"success": True, "deleted_count": count}
+
+
+async def _load_stale_signals(session: AsyncSession, universe: list[str]) -> list[Signal]:
+    result = await session.execute(
+        select(Signal).order_by(Signal.created_at.desc())
+    )
+    all_signals = result.scalars().all()
+    universe_set = set(universe)
+    stale = [
+        signal
+        for signal in all_signals
+        if (
+            signal.data_source in STALE_LOCAL_DATA_SOURCES
+            or signal.is_real_market_data is False
+            or signal.symbol not in universe_set
+        )
+        and not (
+            signal.data_source in REAL_SIGNAL_DATA_SOURCES
+            and signal.is_real_market_data is True
+            and signal.has_error is False
+            and signal.symbol in universe_set
+        )
+    ]
+    return stale
+
+
+def _unique_symbols(signals: list[Signal]) -> list[str]:
+    ordered = OrderedDict[str, None]()
+    for signal in signals:
+        ordered.setdefault(signal.symbol, None)
+    return list(ordered.keys())

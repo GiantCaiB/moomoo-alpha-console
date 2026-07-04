@@ -26,9 +26,9 @@ export default function GlassyCard({
       )}
     >
       {(title || action) && (
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 gap-3">
           {title && (
-            <h3 className="text-sm font-semibold text-text-primary uppercase tracking-wider">
+            <h3 className="text-sm font-semibold text-text-primary">
               {title}
             </h3>
           )}

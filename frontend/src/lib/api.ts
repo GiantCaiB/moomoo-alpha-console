@@ -5,6 +5,7 @@ import type {
   PositionResponse,
   OrderResponse,
   SignalResponse,
+  PositionManagementSignalResponse,
   RiskStatusResponse,
   WatchlistItemResponse,
   PreviewOrderResponse,
@@ -12,6 +13,8 @@ import type {
   TradingUniverseResponse,
   RuntimeStatusResponse,
   RunSignalsResponse,
+  StaleSignalCountResponse,
+  PositionSignalRunResponse,
   MarketDataStatusResponse,
 } from "./types";
 
@@ -72,6 +75,18 @@ export const api = {
   runSignals: () =>
     fetcher<RunSignalsResponse>("/api/v1/signals/run", { method: "POST" }),
 
+  positionSignals: (includeHistory?: boolean) => {
+    const params = includeHistory ? "?include_history=true" : "";
+    return fetcher<PositionManagementSignalResponse[]>(
+      `/api/v1/position-signals${params}`
+    );
+  },
+
+  runPositionSignals: () =>
+    fetcher<PositionSignalRunResponse>("/api/v1/position-signals/run", {
+      method: "POST",
+    }),
+
   riskStatus: () => fetcher<RiskStatusResponse>("/api/v1/risk/status"),
 
   toggleKillSwitch: (enabled: boolean) =>
@@ -91,6 +106,9 @@ export const api = {
       "/api/v1/signals/stale",
       { method: "DELETE" }
     ),
+
+  staleSignalCount: () =>
+    fetcher<StaleSignalCountResponse>("/api/v1/signals/stale-count"),
 
   tradingUniverse: () =>
     fetcher<TradingUniverseResponse>("/api/v1/settings/trading-universe"),

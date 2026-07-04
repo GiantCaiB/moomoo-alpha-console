@@ -6,13 +6,12 @@ import { formatPercent } from "@/lib/format";
 import { isReadOnlyMode } from "@/lib/readonly";
 import { useBrokerHealth } from "@/app/providers";
 import GlassyCard from "@/components/shared/GlassyCard";
-import PriceDisplay from "@/components/shared/PriceDisplay";
-import { Shield, ShieldOff, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Lock } from "lucide-react";
 
 export default function RiskPage() {
   const queryClient = useQueryClient();
 
-  const { data: risk, isLoading } = useQuery({
+  const { data: risk } = useQuery({
     queryKey: ["risk"],
     queryFn: api.riskStatus,
     refetchInterval: 5000,
@@ -31,60 +30,43 @@ export default function RiskPage() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-text-primary">Risk Management</h2>
+        <h2 className="text-2xl font-semibold text-text-primary">Risk</h2>
         <p className="text-sm text-text-muted mt-1">
-          Risk controls, limits, and event log
+          Trading safety, read-only state, and risk limits.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlassyCard
-          title="Kill Switch"
+          title="Read-only Mode"
           neon={readOnly ? "amber" : risk?.kill_switch_enabled ? "red" : "green"}
         >
           <div className="flex items-center justify-between mb-4">
-            <div>
-              {readOnly ? (
-                <>
-                  <p className="text-sm text-accent-amber font-medium">
-                    Read-only mode active
-                  </p>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    All order actions are blocked
-                  </p>
-                </>
-              ) : risk?.kill_switch_enabled ? (
-                <p className="text-sm text-accent-red">All trading is blocked</p>
-              ) : (
-                <p className="text-sm text-text-secondary">Kill switch inactive</p>
-              )}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-accent-amber font-medium">
+                  Read-only mode active
+                </p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  All order actions are blocked
+                </p>
+              </div>
+              <Lock size={32} className="text-accent-amber" />
             </div>
-            {readOnly ? (
-              <AlertTriangle size={32} className="text-accent-amber" />
-            ) : risk?.kill_switch_enabled ? (
-              <ShieldOff size={32} className="text-accent-red" />
-            ) : (
-              <Shield size={32} className="text-accent-green" />
-            )}
           </div>
           {readOnly ? (
-            <div className="w-full py-2.5 rounded-lg text-sm text-center bg-surface-hover/50 text-text-muted border border-surface-border cursor-not-allowed">
-              Read-only — disabled
+            <div className="w-full py-2.5 rounded-xl text-sm text-center bg-surface-hover/50 text-text-muted border border-surface-border cursor-not-allowed">
+              Trading disabled
             </div>
           ) : (
             <button
               onClick={() =>
                 killSwitchMutation.mutate(!risk?.kill_switch_enabled)
               }
-              className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                risk?.kill_switch_enabled
-                  ? "bg-accent-green/10 text-accent-green border border-accent-green/30 hover:bg-accent-green/20"
-                  : "bg-accent-red/10 text-accent-red border border-accent-red/30 hover:bg-accent-red/20"
-              }`}
+              className="w-full py-2.5 rounded-xl text-sm font-medium transition-colors bg-surface-hover/50 text-text-muted border border-surface-border cursor-not-allowed"
+              disabled
             >
-              {risk?.kill_switch_enabled
-                ? "Disable Kill Switch"
-                : "Enable Kill Switch"}
+              Trading disabled
             </button>
           )}
         </GlassyCard>
@@ -92,7 +74,7 @@ export default function RiskPage() {
         <GlassyCard title="Connectivity">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-text-secondary">Broker Status</span>
+              <span className="text-sm text-text-secondary">Moomoo Connection</span>
               <div className="flex items-center gap-2">
                 <span
                   className={`status-dot ${
@@ -113,7 +95,7 @@ export default function RiskPage() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-text-secondary">Read-Only Mode</span>
+              <span className="text-sm text-text-secondary">Read-only Mode</span>
               <span className={`text-sm font-mono ${readOnly ? "text-accent-amber" : "text-accent-green"}`}>
                 {readOnly ? "Active" : "Inactive"}
               </span>
@@ -135,40 +117,6 @@ export default function RiskPage() {
               >
                 {risk?.trading_blocked ? "Yes" : "No"}
               </span>
-            </div>
-          </div>
-        </GlassyCard>
-
-        <GlassyCard title="Daily Loss">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-text-secondary">Current</span>
-              <span
-                className={`text-lg font-bold font-mono ${
-                  risk?.daily_loss_exceeded ? "value-down" : "text-text-primary"
-                }`}
-              >
-                {formatPercent(risk?.daily_loss_pct)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-text-secondary">Limit</span>
-              <span className="text-lg font-bold font-mono text-text-primary">
-                {formatPercent(risk?.daily_loss_limit_pct)}
-              </span>
-            </div>
-            <div className="h-2 rounded-full bg-surface-border overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${
-                  risk?.daily_loss_exceeded ? "bg-accent-red" : "bg-accent-green"
-                }`}
-                style={{
-                  width: `${Math.min(
-                    ((risk?.daily_loss_pct ?? 0) / (risk?.daily_loss_limit_pct ?? 1)) * 100,
-                    100
-                  )}%`,
-                }}
-              />
             </div>
           </div>
         </GlassyCard>

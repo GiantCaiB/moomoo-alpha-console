@@ -313,6 +313,199 @@ async def test_delete_stale_signals(client):
 
 
 @pytest.mark.asyncio
+async def test_stale_signal_count_detects_local_mock_and_out_of_universe(client, monkeypatch):
+    monkeypatch.setattr(settings, "broker_mode", "moomoo")
+    await init_db()
+    factory = create_session_factory()
+    now = datetime.now(timezone.utc)
+
+    async with factory() as session:
+        result = await session.execute(select(Signal))
+        for sig in result.scalars().all():
+            await session.delete(sig)
+        await session.execute(sa_delete(AppSetting).where(AppSetting.key == "trading_universe"))
+        session.add(AppSetting(key="trading_universe", value=json.dumps(["AAPL", "MSFT"])))
+        sr = StrategyRun(
+            strategy_name="test",
+            status="COMPLETED",
+            symbols_screened=4,
+            signals_generated=4,
+            data_source="moomoo",
+            started_at=now,
+            completed_at=now,
+        )
+        session.add(sr)
+        await session.flush()
+        session.add_all([
+            Signal(
+                strategy_run_id=sr.id,
+                symbol="AAPL",
+                verdict="BUY_STARTER",
+                total_score=80.0,
+                data_source="moomoo",
+                signal_date=now,
+                strategy_name="test",
+                is_real_market_data=True,
+                has_error=False,
+            ),
+            Signal(
+                strategy_run_id=sr.id,
+                symbol="MSFT",
+                verdict="WATCH",
+                total_score=60.0,
+                data_source="local_generated",
+                signal_date=now,
+                strategy_name="test",
+                is_real_market_data=False,
+            ),
+            Signal(
+                strategy_run_id=sr.id,
+                symbol="NVDA",
+                verdict="WATCH",
+                total_score=60.0,
+                data_source="moomoo",
+                signal_date=now,
+                strategy_name="test",
+                is_real_market_data=True,
+                has_error=False,
+            ),
+        ])
+        await session.commit()
+
+    resp = await client.get("/api/v1/signals/stale-count")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["stale_count"] == 2
+    assert data["local_or_mock_count"] == 1
+    assert data["out_of_universe_count"] == 1
+    assert set(data["stale_symbols"]) == {"MSFT", "NVDA"}
+    assert data["local_or_mock_symbols"] == ["MSFT"]
+    assert data["out_of_universe_symbols"] == ["NVDA"]
+
+
+@pytest.mark.asyncio
+async def test_stale_signal_count_does_not_count_current_universe_real_rows(client, monkeypatch):
+    monkeypatch.setattr(settings, "broker_mode", "moomoo")
+    await init_db()
+    factory = create_session_factory()
+    now = datetime.now(timezone.utc)
+
+    async with factory() as session:
+        result = await session.execute(select(Signal))
+        for sig in result.scalars().all():
+            await session.delete(sig)
+        await session.execute(sa_delete(AppSetting).where(AppSetting.key == "trading_universe"))
+        session.add(AppSetting(key="trading_universe", value=json.dumps(["AAPL"])))
+        sr = StrategyRun(
+            strategy_name="test",
+            status="COMPLETED",
+            symbols_screened=1,
+            signals_generated=1,
+            data_source="moomoo",
+            started_at=now,
+            completed_at=now,
+        )
+        session.add(sr)
+        await session.flush()
+        session.add(
+            Signal(
+                strategy_run_id=sr.id,
+                symbol="AAPL",
+                verdict="BUY_STARTER",
+                total_score=80.0,
+                data_source="moomoo",
+                signal_date=now,
+                strategy_name="test",
+                is_real_market_data=True,
+                has_error=False,
+            )
+        )
+        await session.commit()
+
+    resp = await client.get("/api/v1/signals/stale-count")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["stale_count"] == 0
+    assert data["local_or_mock_count"] == 0
+    assert data["out_of_universe_count"] == 0
+    assert data["stale_symbols"] == []
+
+
+@pytest.mark.asyncio
+async def test_delete_stale_matches_stale_count(client, monkeypatch):
+    monkeypatch.setattr(settings, "broker_mode", "moomoo")
+    await init_db()
+    factory = create_session_factory()
+    now = datetime.now(timezone.utc)
+
+    async with factory() as session:
+        result = await session.execute(select(Signal))
+        for sig in result.scalars().all():
+            await session.delete(sig)
+        await session.execute(sa_delete(AppSetting).where(AppSetting.key == "trading_universe"))
+        session.add(AppSetting(key="trading_universe", value=json.dumps(["AAPL", "MSFT"])))
+        sr = StrategyRun(
+            strategy_name="test",
+            status="COMPLETED",
+            symbols_screened=4,
+            signals_generated=4,
+            data_source="moomoo",
+            started_at=now,
+            completed_at=now,
+        )
+        session.add(sr)
+        await session.flush()
+        session.add_all([
+            Signal(
+                strategy_run_id=sr.id,
+                symbol="AAPL",
+                verdict="BUY_STARTER",
+                total_score=80.0,
+                data_source="moomoo",
+                signal_date=now,
+                strategy_name="test",
+                is_real_market_data=True,
+                has_error=False,
+            ),
+            Signal(
+                strategy_run_id=sr.id,
+                symbol="MSFT",
+                verdict="WATCH",
+                total_score=60.0,
+                data_source="mock",
+                signal_date=now,
+                strategy_name="test",
+                is_real_market_data=False,
+            ),
+            Signal(
+                strategy_run_id=sr.id,
+                symbol="NVDA",
+                verdict="WATCH",
+                total_score=60.0,
+                data_source="moomoo",
+                signal_date=now,
+                strategy_name="test",
+                is_real_market_data=True,
+                has_error=False,
+            ),
+        ])
+        await session.commit()
+
+    count_resp = await client.get("/api/v1/signals/stale-count")
+    assert count_resp.status_code == 200
+    count_data = count_resp.json()
+    delete_resp = await client.delete("/api/v1/signals/stale")
+    assert delete_resp.status_code == 200
+    delete_data = delete_resp.json()
+    assert delete_data["deleted_count"] == count_data["stale_count"] == 2
+
+    post_count_resp = await client.get("/api/v1/signals/stale-count")
+    assert post_count_resp.status_code == 200
+    post_count = post_count_resp.json()
+    assert post_count["stale_count"] == 0
+
+
+@pytest.mark.asyncio
 async def test_run_signals_response_enriched(client, monkeypatch):
     """POST /signals/run response includes provider, data_source, universe_source, etc."""
     monkeypatch.setattr(settings, "broker_mode", "mock")

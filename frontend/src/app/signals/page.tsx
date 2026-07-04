@@ -8,9 +8,8 @@ import { getSourceBadge } from "@/lib/source_badge";
 import GlassyCard from "@/components/shared/GlassyCard";
 import PriceDisplay from "@/components/shared/PriceDisplay";
 import StatusBadge from "@/components/shared/StatusBadge";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Play, Info, ShieldBan, AlertTriangle, Trash2 } from "lucide-react";
-import type { SignalResponse } from "@/lib/types";
 
 export default function SignalsPage() {
   const queryClient = useQueryClient();
@@ -35,9 +34,9 @@ export default function SignalsPage() {
     refetchInterval: 30000,
   });
 
-  const { data: allSignals } = useQuery({
-    queryKey: ["signals", "include_local"],
-    queryFn: () => api.signals(true),
+  const { data: staleSummary } = useQuery({
+    queryKey: ["signals", "stale-count"],
+    queryFn: api.staleSignalCount,
     enabled: isMoomoo,
     refetchInterval: 30000,
   });
@@ -47,7 +46,7 @@ export default function SignalsPage() {
     onMutate: () => setRunFeedback(null),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["signals"] });
-      queryClient.invalidateQueries({ queryKey: ["signals", "include_local"] });
+      queryClient.invalidateQueries({ queryKey: ["signals", "stale-count"] });
       const parts: string[] = [];
       parts.push(`Status: ${result.status}`);
       if (result.signals_generated !== undefined) {
@@ -68,67 +67,62 @@ export default function SignalsPage() {
 
   const deleteStaleMutation = useMutation({
     mutationFn: api.deleteStaleSignals,
-    onSuccess: (result) => {
-      if (result.deleted_count > 0) {
-        queryClient.invalidateQueries({ queryKey: ["signals"] });
-        queryClient.invalidateQueries({ queryKey: ["signals", "include_local"] });
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["signals"] });
+      queryClient.invalidateQueries({ queryKey: ["signals", "stale-count"] });
     },
   });
 
-  const isMoomooSignal = (s: SignalResponse) =>
-    (s.data_source === "moomoo" || s.data_source === "moomoo_snapshot_plus_yfinance_kline") &&
-    s.is_real_market_data === true &&
-    universeSymbols.includes(s.symbol);
-
-  const staleCount = useMemo(() => {
-    if (!isMoomoo || !allSignals) return 0;
-    return allSignals.filter((s) => !isMoomooSignal(s)).length;
-  }, [isMoomoo, allSignals, universeSymbols]);
-
   const filteredSignals = useMemo(() => {
     if (!isMoomoo || !signals) return signals;
-    return signals.filter(isMoomooSignal);
+    return signals.filter(
+      (s) =>
+        (s.data_source === "moomoo" || s.data_source === "moomoo_snapshot_plus_yfinance_kline") &&
+        s.is_real_market_data === true &&
+        universeSymbols.includes(s.symbol)
+    );
   }, [isMoomoo, signals, universeSymbols]);
 
   const buySignals = filteredSignals?.filter((s) => s.verdict === "BUY_STARTER" && s.data_quality_status === "OK") || [];
   const watchSignals = filteredSignals?.filter((s) => s.verdict === "WATCH" && s.data_quality_status === "OK") || [];
   const avoidSignals = filteredSignals?.filter((s) => s.verdict === "AVOID" && s.data_quality_status === "OK") || [];
   const dataIssueSignals = filteredSignals?.filter((s) => s.data_quality_status !== "OK") || [];
+  const hasStale = (staleSummary?.stale_count ?? 0) > 0;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-text-primary">Signals</h2>
+          <h2 className="text-2xl font-semibold text-text-primary">Entry Signals</h2>
           <p className="text-sm text-text-muted mt-1">
-            Momentum Relative Strength Screener
+            Momentum and relative strength ideas for new positions.
+          </p>
+          <p className="text-xs text-text-muted mt-1">
+            Entry Signals evaluate new position ideas. Existing holdings are managed under Portfolio → Position Management.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {staleCount > 0 && (
+          {hasStale && (
             <button
               onClick={() => deleteStaleMutation.mutate()}
               disabled={deleteStaleMutation.isPending}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-amber/10
-                         border border-accent-amber/30 text-accent-amber text-sm font-medium
-                         hover:bg-accent-amber/20 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent-amber/10
+                         border border-accent-amber/25 text-accent-amber text-sm font-medium
+                         hover:bg-accent-amber/15 transition-colors disabled:opacity-50"
             >
               <Trash2 size={16} />
-              {deleteStaleMutation.isPending
-                ? "Clearing..."
-                : `Clear ${staleCount} stale`}
+              {deleteStaleMutation.isPending ? "Clearing..." : "Clear Stale"}
             </button>
           )}
           <button
             onClick={() => runMutation.mutate()}
             disabled={runMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-green/10
-                       border border-accent-green/30 text-accent-green text-sm font-medium
-                       hover:bg-accent-green/20 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-green/10
+                       border border-accent-green/25 text-accent-green text-sm font-medium
+                       hover:bg-accent-green/15 transition-colors disabled:opacity-50"
           >
             <Play size={16} />
-            {runMutation.isPending ? "Running..." : "Run Screener"}
+            {runMutation.isPending ? "Running..." : "Run Entry Screener"}
           </button>
         </div>
       </div>
@@ -140,18 +134,28 @@ export default function SignalsPage() {
         </div>
       )}
 
-      {staleCount > 0 && (
+      {hasStale && (
         <div className="mb-4 px-4 py-2 rounded-lg bg-accent-amber/10 border border-accent-amber/30 text-accent-amber text-sm flex items-center gap-2">
           <AlertTriangle size={16} />
-          {staleCount} stale signal{staleCount !== 1 ? "s" : ""} from local/mock data hidden.{" "}
+          {(() => {
+            const staleCount = staleSummary?.stale_count ?? 0;
+            const localCount = staleSummary?.local_or_mock_count ?? 0;
+            const universeCount = staleSummary?.out_of_universe_count ?? 0;
+            const universeSymbols = staleSummary?.out_of_universe_symbols ?? [];
+            if (localCount > 0 && universeCount === 0) {
+              return `${staleCount} stale signal${staleCount !== 1 ? "s" : ""} hidden.`;
+            }
+            if (universeCount > 0 && localCount === 0) {
+              return `${staleCount} signal${staleCount !== 1 ? "s" : ""} outside current Trading Universe hidden: ${universeSymbols.join(", ")}.`;
+            }
+            return `${staleCount} stale signal${staleCount !== 1 ? "s" : ""} hidden: local/mock and outside current Trading Universe.`;
+          })()}{" "}
           <button
             onClick={() => deleteStaleMutation.mutate()}
             className="underline font-medium hover:no-underline"
           >
-            Clear them
-          </button>{" "}
-          or use{" "}
-          <span className="font-mono text-[11px]">include_local=true</span> to debug.
+            Clear Stale
+          </button>
         </div>
       )}
 
@@ -185,10 +189,10 @@ export default function SignalsPage() {
         </div>
       ) : filteredSignals && filteredSignals.length > 0 ? (
         <div className="space-y-4">
-          <GlassyCard title="BUY Signals">
+          <GlassyCard title="Buy Candidates">
             {buySignals.length === 0 ? (
               <p className="text-sm text-text-muted text-center py-4">
-                No BUY signals. Run the screener.
+                No buy candidates right now. Refresh the screener when ready.
               </p>
             ) : (
               <div className="space-y-2">
@@ -208,10 +212,10 @@ export default function SignalsPage() {
             )}
           </GlassyCard>
 
-          <GlassyCard title="Watch List">
+          <GlassyCard title="Watchlist Candidates">
             {watchSignals.length === 0 ? (
               <p className="text-sm text-text-muted text-center py-4">
-                No WATCH signals
+                No watchlist candidates
               </p>
             ) : (
               <div className="space-y-2">
@@ -231,10 +235,10 @@ export default function SignalsPage() {
             )}
           </GlassyCard>
 
-          <GlassyCard title="Avoid / No Signal">
+          <GlassyCard title="Avoid / No Setup">
             {avoidSignals.length === 0 ? (
               <p className="text-sm text-text-muted text-center py-4">
-                No AVOID signals
+                No avoid rows
               </p>
             ) : (
               <div className="space-y-2">
@@ -281,7 +285,7 @@ export default function SignalsPage() {
         <GlassyCard>
           <div className="text-center py-12">
             <p className="text-text-muted text-sm mb-4">
-              Run screener to generate signals from moomoo market data.
+              No entry alerts right now.
             </p>
             <button
               onClick={() => runMutation.mutate()}
@@ -290,7 +294,7 @@ export default function SignalsPage() {
                          text-accent-green text-sm font-medium hover:bg-accent-green/20
                          transition-colors disabled:opacity-50"
             >
-              {runMutation.isPending ? "Running..." : "Run Screener Now"}
+              {runMutation.isPending ? "Running..." : "Run Entry Screener"}
             </button>
           </div>
         </GlassyCard>
@@ -309,6 +313,15 @@ function SignalRow({
   onToggle: () => void;
 }) {
   const badge = getSourceBadge(sig.data_source);
+  const reasonLabels: Record<string, string> = {
+    Trend: "Trend",
+    "Relative Strength": "Relative Strength",
+    Volume: "Volume",
+    "Volume Confirmation": "Volume",
+    "Entry Quality": "Entry",
+    "Risk/Reward": "Risk/Reward",
+    "Market Regime": "Market",
+  };
 
   return (
     <div>
@@ -326,16 +339,16 @@ function SignalRow({
           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${badge.className}`}>
             {badge.label}
           </span>
-          <div className="flex items-center gap-1 ml-1">
-            {(sig.scores || []).map((s: any) => (
+          <div className="flex items-center gap-1 ml-1 flex-wrap">
+            {(sig.scores || []).slice(0, 3).map((s: any) => (
               <div
                 key={s.category}
                 className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-hover"
                 title={`${s.category}: ${s.score}/${s.max_score}`}
               >
-                <span className="text-[10px] text-text-muted">{s.category.slice(0, 3)}</span>
+                <span className="text-[10px] text-text-muted">{reasonLabels[s.category] ?? s.category}</span>
                 <span className="text-[10px] font-mono text-accent-green">
-                  {s.score}
+                  {Math.round(s.score)}
                 </span>
               </div>
             ))}
@@ -344,9 +357,9 @@ function SignalRow({
         <div className="flex items-center gap-4 text-xs font-mono text-text-secondary">
           {sig.data_quality_status === "OK" ? (
             <span>
-              Score:{" "}
+              Score{" "}
               <span className="text-accent-green font-bold">
-                {sig.total_score}
+                {Math.round(sig.total_score)} / 100
               </span>
             </span>
           ) : (
@@ -425,7 +438,7 @@ function SignalRow({
                   return (
                     <div key={s.category} className="flex items-center gap-2">
                       <span className="text-xs text-text-secondary w-32 shrink-0">
-                        {s.category}
+                        {reasonLabels[s.category] ?? s.category}
                       </span>
                       <div className="flex-1 h-2 rounded-full bg-surface-border overflow-hidden">
                         <div
@@ -489,6 +502,18 @@ function SignalRow({
 
           <p className="text-xs text-text-muted mb-1">Reason</p>
           <p className="text-sm text-text-primary mb-3">{sig.reason}</p>
+
+          <div className="mb-3 text-sm text-text-secondary">
+            {sig.verdict === "BUY_STARTER" && (
+              <p>Starter candidate. Review risk before acting manually.</p>
+            )}
+            {sig.verdict === "WATCH" && (
+              <p>Watch because the setup is constructive but not yet a buy trigger.</p>
+            )}
+            {sig.verdict === "AVOID" && (
+              <p>Avoid because the setup is weak or the momentum filters failed.</p>
+            )}
+          </div>
 
           {sig.invalidation && (
             <>

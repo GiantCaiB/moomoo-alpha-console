@@ -12,6 +12,8 @@ from app.models.risk_event import RiskEvent
 from app.models.trade_journal import TradeJournalEntry
 from app.models.app_setting import AppSetting
 from app.models.audit_log import AuditLog
+from app.models.position_lifecycle_state import PositionLifecycleState
+from app.models.position_management_signal import PositionManagementSignal
 
 __all__ = [
     "Symbol",
@@ -28,4 +30,6 @@ __all__ = [
     "TradeJournalEntry",
     "AppSetting",
     "AuditLog",
+    "PositionLifecycleState",
+    "PositionManagementSignal",
 ]

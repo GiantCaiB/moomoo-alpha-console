@@ -38,3 +38,12 @@ class SignalResponse(BaseModel):
     failed_filters: list[str] | None = None
     data_quality_status: str = "OK"
     calculated_score_before_filters: float | None = None
+
+
+class StaleSignalCountResponse(BaseModel):
+    stale_count: int
+    local_or_mock_count: int
+    out_of_universe_count: int
+    stale_symbols: list[str]
+    local_or_mock_symbols: list[str]
+    out_of_universe_symbols: list[str]
