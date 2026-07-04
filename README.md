@@ -1,55 +1,376 @@
-# Moomoo Alpha Console
+# Alpha Cockpit
 
-A local-first, long-running trading dashboard for US stock swing trading, built on top of **moomoo OpenD / Futu OpenAPI**.
+**Alpha Cockpit** is a read-only trading research dashboard for monitoring a real Moomoo account, reviewing portfolio exposure, generating entry signals, and managing existing positions with rule-based guidance.
 
-> **⚠️ WARNING**
-> This software is for research and personal trading workflow automation. It does not guarantee profits. Trading involves risk of loss. Live trading must be enabled explicitly and should only be used after testing with paper mode.
+It is designed as a personal trading cockpit: real account visibility, market-data-backed signals, position management alerts, and risk status — without automated trading.
 
----
-
-## What It Does
-
-- Connects to moomoo OpenD for read-only account display — positions, portfolio, open orders, and quotes
-- Displays portfolio value, positions, orders, and risk status in a dark-themed dashboard
-- Generates deterministic swing-trading signals using a Momentum + Relative Strength screener
-- Enforces hard risk controls before any order can be placed
-- Supports **mock**, **paper**, and **moomoo** broker modes
-- Logs every action for full auditability
-- Runs entirely locally with SQLite (PostgreSQL-ready schema)
-
-## What It Does NOT Do
-
-- ❌ No auto-trading without explicit user approval
-- ❌ No market orders (limit orders only)
-- ❌ No options trading
-- ❌ No crypto
-- ❌ No penny stocks
-- ❌ No HFT
-- ❌ No LLM-based order placement
-- ❌ No cloud dependency (optional Docker only)
+> **Important:** Alpha Cockpit is a research and monitoring tool only. It does not place trades, cancel orders, or execute automated strategies.
 
 ---
 
-## Quick Start
+## Overview
+
+Alpha Cockpit connects to **Moomoo OpenD** for real account data and uses cached market data for research calculations. The goal is to help traders answer three separate questions:
+
+1. **What new opportunities should I watch?**  
+   Handled by Entry Signals.
+
+2. **How should I manage positions I already own?**  
+   Handled by Position Guidance.
+
+3. **Is my account and system state safe?**  
+   Handled by Risk and Broker Health.
+
+The application is intentionally read-only. All trading decisions must be reviewed and executed manually in the broker platform.
+
+---
+
+## Key Features
+
+### Real Account Dashboard
+
+- Portfolio value
+- Cash balance
+- Current holdings
+- Open orders
+- Read-only broker status
+- Data source health
+- Risk status overview
+
+### Entry Signals
+
+Entry Signals evaluate potential new position ideas using a momentum and relative strength model.
+
+Signal categories include:
+
+- `BUY_STARTER`
+- `WATCH`
+- `AVOID`
+- `DATA_ERROR`
+
+The screener uses market data, cached historical bars, and benchmark comparison to score candidates.
+
+### Position Guidance
+
+Position Guidance manages existing holdings only. It does not scan the full trading universe and does not generate new entry ideas.
+
+It combines two concepts:
+
+#### Profit Tail
+
+A staged profit-taking framework designed to avoid selling entire winners too early.
+
+Example guidance:
+
+- Trim partial profit at defined gain thresholds
+- Enter tail mode after major gains
+- Hold tail positions while long-term trend remains intact
+- Trim or exit tail positions when trend deteriorates
+
+#### Loss Defense
+
+A defensive layer that prevents the strategy from becoming a “never stop loss” system.
+
+Example guidance:
+
+- Review deteriorating positions
+- Stop adding to losing positions
+- Reduce risk when losses deepen
+- Review exit when major risk thresholds are breached
+
+All Position Guidance is read-only and advisory.
+
+### Risk & Safety
+
+- Live trading disabled
+- Order actions blocked
+- Read-only mode enforced
+- Broker health monitoring
+- Risk limit visibility
+
+### Market Data
+
+- Moomoo OpenD for account, positions, orders, and real-time account context
+- yfinance-backed historical K-line data
+- SQLite cache for historical bars
+- Price fallback logic for more reliable signal generation
+
+---
+
+## Architecture
+
+Alpha Cockpit is built with a modern full-stack architecture:
+
+```text
+Frontend:     Next.js / React / TypeScript
+Backend:      FastAPI / Python
+Database:     SQLite
+Broker:       Moomoo OpenD
+Market Data:  yfinance + local cache
+```
+
+High-level flow:
+
+```text
+Moomoo OpenD
+   ├── Account summary
+   ├── Positions
+   ├── Orders
+   └── Broker status
+
+yfinance / K-Line Cache
+   ├── Historical daily bars
+   ├── Benchmark data
+   └── Technical indicators
+
+FastAPI Backend
+   ├── Entry signal engine
+   ├── Position guidance engine
+   ├── Risk checks
+   └── API routes
+
+Next.js Frontend
+   ├── Cockpit
+   ├── Entry Signals
+   ├── Portfolio
+   ├── Orders
+   ├── Risk
+   └── Settings
+```
+
+---
+
+## Pages
+
+### Cockpit
+
+The main overview screen for account status, active alerts, holdings, and system health.
+
+### Entry Signals
+
+Research page for new position ideas.  
+This page answers:
+
+> “Should I consider opening a new position?”
+
+### Portfolio
+
+Portfolio holdings and position management guidance.  
+This page answers:
+
+> “How should I manage positions I already own?”
+
+### Orders
+
+Read-only view of open and historical Moomoo orders.
+
+### Risk
+
+Safety and broker status panel.
+
+### Settings
+
+Configuration for broker mode, trading universe, market data, risk limits, and read-only state.
+
+### Labs
+
+Experimental area for future backtesting, expectancy analytics, and strategy research.
+
+---
+
+## Signal Philosophy
+
+Alpha Cockpit separates trading research into different domains.
+
+```text
+Entry Signals
+Evaluate new trade ideas.
+
+Position Guidance
+Manage existing holdings.
+
+Risk
+Prevent unsafe behavior.
+```
+
+This separation avoids mixing “should I buy?” with “how should I manage what I already own?”
+
+A symbol may appear in both Entry Signals and Portfolio, but the meaning is different.
+
+For example:
+
+- Entry Signals may say a stock is not a good new setup.
+- Position Guidance may still say to hold it because it is already owned and has not triggered a management action.
+
+These are not conflicts. They answer different questions.
+
+---
+
+## Read-Only Design
+
+Alpha Cockpit is designed to be safe by default.
+
+The application does **not**:
+
+- Place market orders
+- Place limit orders
+- Cancel existing orders
+- Modify broker positions
+- Automatically trim positions
+- Automatically enter tail mode
+- Automatically stop-loss positions
+- Run live trading strategies
+
+All guidance is informational only.
+
+Trading actions must be performed manually in Moomoo or another broker platform.
+
+---
+
+## Position Guidance Logic
+
+### Profit Tail
+
+Profit Tail is used for profitable positions.
+
+Example rules:
+
+```text
+Gain >= 25%   -> Trim Profit
+Gain >= 50%   -> Trim Profit
+Gain >= 75%   -> Trim Profit
+Gain >= 100%  -> Enter Tail Mode
+Tail weakens  -> Trim Tail or Exit Tail
+```
+
+The goal is to recover profit gradually while leaving room for exceptional winners.
+
+### Loss Defense
+
+Loss Defense is used for losing or deteriorating positions.
+
+Example rules:
+
+```text
+Loss <= -8%   -> Review Position
+Loss <= -15%  -> Stop Adding
+Loss <= -20%  -> Reduce Risk
+Loss <= -30%  -> Exit Review
+```
+
+The goal is to avoid unlimited averaging down and prevent small losses from becoming portfolio-damaging losses.
+
+---
+
+## Entry Signal Model
+
+The Entry Signal engine uses a momentum and relative strength score.
+
+Example components:
+
+- Trend strength
+- Relative strength vs benchmark
+- Volume confirmation
+- Entry quality
+- Risk / reward
+- Market regime
+
+The output is a score from 0 to 100 and a signal classification.
+
+```text
+BUY_STARTER  -> potential starter position candidate
+WATCH        -> strong enough to monitor, not yet a buy candidate
+AVOID        -> no valid setup
+DATA_ERROR   -> insufficient or invalid data
+```
+
+---
+
+## Data Sources
+
+Alpha Cockpit uses multiple data sources depending on the task.
+
+### Moomoo OpenD
+
+Used for:
+
+- Account value
+- Cash
+- Positions
+- Orders
+- Broker status
+- Position-level prices when available
+
+### yfinance
+
+Used for:
+
+- Historical daily bars
+- Technical indicators
+- Benchmark comparison
+- Fallback latest close
+
+### SQLite Cache
+
+Used to reduce repeated historical data requests and improve local runtime performance.
+
+---
+
+## Safety Principles
+
+Alpha Cockpit follows these principles:
+
+1. **Read-only first**
+2. **No automatic trading**
+3. **Separate entry logic from position management**
+4. **Use real account data carefully**
+5. **Prefer explicit guidance over hidden automation**
+6. **Protect against stale or mock data**
+7. **Do not silently fall back to invalid trading universes**
+8. **Make data sources visible to the user**
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- Python 3.12+
-- Node.js 20+
-- npm
+- Python 3.11+
+- Node.js 18+
+- Moomoo OpenD installed and running
+- A Moomoo account configured in OpenD
+- SQLite
 
-### 1. Backend
+---
+
+## Backend Setup
+
+From the backend directory:
 
 ```bash
 cd backend
-pip install -e ".[dev]"
-mkdir -p data
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8020 --reload
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-The backend starts at `http://localhost:8020`.
+Run the backend:
 
-### 2. Frontend
+```bash
+uvicorn app.main:app --reload --port 8020
+```
+
+The backend will be available at:
+
+```text
+http://localhost:8020
+```
+
+---
+
+## Frontend Setup
+
+From the frontend directory:
 
 ```bash
 cd frontend
@@ -57,217 +378,95 @@ npm install
 npm run dev
 ```
 
-The frontend starts at `http://localhost:3000`.
+The frontend will be available at:
 
-The frontend proxies API calls to `localhost:8020` via Next.js rewrites (configured in `next.config.js`).
-
----
-
-## Docker
-
-```bash
-docker compose up --build
+```text
+http://localhost:3000
 ```
 
-This starts:
-- Backend on `http://localhost:8020`
-- Frontend on `http://localhost:3000`
-
 ---
 
-## Broker Modes
+## Configuration
 
-Set `BROKER_MODE` in `.env` or as an environment variable.
+Configuration is managed through environment variables and the Settings page.
 
-| Mode | Description |
-|---|---|---|
-| `mock` | **(Default)** Fully local mock data. **Test-only.** No external dependencies. All data is synthetic and should not be used for production analysis. |
-| `paper` | Paper trading. Uses mock market data but records orders, fills, and trade log for simulated P&L tracking. **Test-only.** |
-| `moomoo` | **MOOMOO_READ_ONLY** — Real moomoo OpenD connection. **Requires OpenD running locally.** Real account data, real market data for signals. Read-only display only — all write operations are blocked. |
+Common configuration areas:
 
-### Moomoo Read-Only Mode (Phase 2B)
+- Broker mode
+- Moomoo OpenD host and port
+- Trading universe
+- Risk limits
+- Market data provider
+- Historical bar lookback
+- Cache behavior
+- Read-only safety mode
 
-The moomoo adapter connects to OpenD and reads real account data without placing orders. Signals are generated from real moomoo market data (quotes and historical daily klines), not mock/synthetic data.
+Example environment variables may include:
 
-1. Install moomoo SDK: `pip install -e ".[moomoo]"` (installs `moomoo-api`)
-2. Download and run [Futu OpenD](https://www.futunn.com/opend/) on `127.0.0.1:11111`
-3. Unlock your trade password in OpenD
-4. Configure environment variables:
-
-```bash
+```env
 BROKER_MODE=moomoo
 MOOMOO_HOST=127.0.0.1
 MOOMOO_PORT=11111
-MOOMOO_TRD_ENV=SIMULATE   # or REAL for live account view
+READ_ONLY=true
+KLINE_PROVIDER=yfinance
 ```
 
-The dashboard shows distinct banners and badges:
-- **Moomoo Simulate Read-Only** — reads simulated account data (no real money)
-- **Moomoo Real Read-Only** — reads real account data (display only)
-
-Signals show a **MOOMOO DATA** badge when generated from real market data.
-
-#### Trading Universe
-
-The Trading Universe is editable from the **Settings** page:
-- Add or remove symbols
-- Save changes — they persist in the database
-- After saving, run the screener — the updated universe is used immediately
-- Universe precedence: app_settings.trading_universe → env/default universe
-
-#### Signal Generation
-
-- In moomoo mode, signals are generated using real moomoo quotes and historical daily klines
-- Data failure for a symbol results in a **DATA_ERROR** record, not a fabricated AVOID signal
-- If fewer than 200 daily bars are available, the symbol is marked as DATA_ERROR
-- Mock/local data is never used in moomoo runtime
-- Signal metadata: `data_source="moomoo"`, `is_real_market_data=true`, `is_tradeable=false`
-
-> **❗ Order placement and cancellation always raise `RuntimeError("Read-only mode")` in moomoo mode, regardless of `TRADING_ENABLED` setting.**
-
-`MOOMOO_TRD_ENV=SIMULATE` maps to `TrdEnv.SIMULATE` (simulated trading environment).  
-`MOOMOO_TRD_ENV=REAL` maps to `TrdEnv.REAL` (real trading environment).  
-Both are read-only in this phase. Live trading (MOOMOO_LIVE) is not implemented.
-
 ---
 
-## Risk Controls
+## Running Tests
 
-Every order passes through the **Risk Engine** which checks:
-
-| Rule | Configuration |
-|---|---|
-| Global kill switch | `POST /api/v1/risk/kill-switch` |
-| Broker disconnected | Auto-detected |
-| Stale quote | `MAX_QUOTE_AGE_SECONDS` (default: 10s) |
-| Missing stop loss | Required for BUY orders |
-| Order type not LIMIT | Only `LIMIT` allowed |
-| Symbol not in universe | `UNIVERSE_SYMBOLS` |
-| Position size exceeds max | `MAX_POSITION_PCT` of portfolio |
-| Single trade risk exceeds max | `MAX_RISK_PER_TRADE_PCT` of portfolio |
-| Daily loss exceeded | `DAILY_LOSS_LIMIT_PCT` |
-| Max drawdown exceeded | `MAX_DRAWDOWN_SOFT_PCT` / `MAX_DRAWDOWN_HARD_PCT` |
-| Duplicate open order | Same symbol + same direction |
-
----
-
-## Tests
+Backend tests:
 
 ```bash
 cd backend
 python -m pytest tests/ -v
+```
 
-# Run specific test file
-python -m pytest tests/test_risk_engine.py -v
+Frontend build:
+
+```bash
+cd frontend
+npm run build
 ```
 
 ---
 
-## Order Flow
+## Project Status
 
-1. Signal generated by screener
-2. User clicks **Preview** on the frontend
-3. Backend evaluates the order against all risk rules
-4. UI displays allowed/blocked decision
-5. User clicks **Approve**
-6. Backend checks risk again
-7. If passed: submits order to broker (mock/paper/moomoo)
-8. Everything is logged to the audit log
+Alpha Cockpit is currently a personal research project focused on:
 
----
+- Read-only account visibility
+- Entry signal research
+- Position management guidance
+- Risk monitoring
+- UI/UX refinement
+- Future expectancy analytics and backtesting
 
-## API Endpoints
+Planned areas:
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/v1/health` | Health check |
-| GET | `/api/v1/broker/health` | Broker connection health |
-| GET | `/api/v1/config` | App configuration |
-| GET | `/api/v1/portfolio/summary` | Portfolio summary |
-| GET | `/api/v1/positions` | Open positions |
-| GET | `/api/v1/orders` | All orders |
-| POST | `/api/v1/orders/preview` | Preview order (risk check) |
-| POST | `/api/v1/orders/approve` | Approve and submit order |
-| POST | `/api/v1/orders/cancel` | Cancel order |
-| GET | `/api/v1/signals` | Generated signals |
-| POST | `/api/v1/signals/run` | Run screener |
-| GET | `/api/v1/risk/status` | Risk status |
-| POST | `/api/v1/risk/kill-switch` | Toggle kill switch |
-| GET | `/api/v1/watchlist` | Get watchlist |
-| POST | `/api/v1/watchlist` | Add to watchlist |
-| DELETE | `/api/v1/watchlist/{symbol}` | Remove from watchlist |
-| GET | `/api/v1/settings/trading-universe` | Get trading universe (DB-first) |
-| PUT | `/api/v1/settings/trading-universe` | Save trading universe (persisted to DB) |
-| WS | `/api/v1/ws` | WebSocket live events |
+- Strategy expectancy analytics
+- Backtesting lab
+- Signal performance tracking
+- Better portfolio-level risk analytics
+- Manual lifecycle controls for trim and tail state
+- More advanced data health monitoring
 
 ---
 
-## Project Structure
+## Disclaimer
 
-```
-moomoo-alpha-console/
-├── backend/
-│   ├── app/
-│   │   ├── api/           # FastAPI routes + WebSocket
-│   │   ├── core/          # Config, logging, time utils
-│   │   ├── db/            # SQLAlchemy models, session, migrations
-│   │   ├── models/        # Database models (14 tables)
-│   │   ├── schemas/       # Pydantic request/response schemas
-│   │   ├── services/
-│   │   │   ├── broker/    # Mock, Paper, Moomoo adapters
-│   │   │   ├── risk/      # Risk engine (13 rules)
-│   │   │   ├── research/  # Research provider interfaces
-│   │   │   ├── execution/ # Order service
-│   │   │   ├── market_data/
-│   │   │   ├── portfolio/
-│   │   │   └── audit/
-│   │   ├── strategies/    # Momentum Relative Strength screener
-│   │   ├── workers/       # APScheduler jobs
-│   │   └── main.py        # FastAPI app factory
-│   ├── tests/             # pytest tests (57+ tests)
-│   ├── alembic.ini
-│   └── pyproject.toml
-├── frontend/
-│   ├── src/
-│   │   ├── app/           # Next.js pages (Dashboard, Signals, Positions, Orders, Risk, Settings, Backtests)
-│   │   ├── components/    # Layout, shared UI components
-│   │   └── lib/           # API client, WebSocket, Zustand store, types
-│   ├── package.json
-│   └── next.config.js
-├── docker-compose.yml
-├── .env.example
-└── README.md
-```
+This project is for educational and research purposes only.
+
+It is not financial advice.  
+It is not an automated trading system.  
+It does not guarantee profits.  
+Trading and investing involve risk, including the possible loss of capital.
+
+You are responsible for your own trading decisions.
 
 ---
 
-## Roadmap
+## License
 
-| Phase | Status |
-|---|---|
-| Backend MVP (FastAPI, mock broker, risk engine, signals) | ✅ Done |
-| Database (SQLAlchemy models, SQLite, Alembic) | ✅ Done |
-| API routes (health, config, portfolio, positions, orders, signals, risk, watchlist) | ✅ Done |
-| Frontend MVP (Dashboard, Signals, Positions, Orders, Risk, Settings) | ✅ Done |
-| Tests (risk engine, signal scoring, broker, API) | ✅ Done |
-| Docker Compose | ✅ Done |
-| Moomoo OpenD read-only display (Phase 2A) | ✅ Done |
-| Moomoo market data signals + editable Trading Universe (Phase 2B) | ✅ Done |
-| WebSocket live event broadcasting | ⬜ TODO (skeleton ready) |
-| Postgres support | ⬜ TODO |
-| Redis caching | ⬜ TODO |
-| Research adapters (Vibe-Trading, OpenBB, Backtrader) | ⬜ TODO (placeholders ready) |
-| Strategy backtesting engine | ⬜ TODO |
-| Live trading (MOOMOO_LIVE) | ⬜ TODO (future phase) |
-
----
-
-## Safety Model
-
-1. **Kill switch**: Global on/off for all trading
-2. **Risk checks**: 13 deterministic rules evaluated before every order
-3. **Dual approval**: Preview + Approve; risk checked both times
-4. **Audit trail**: Every order, approval, rejection, and error logged to DB
-5. **Broker isolation**: All broker access through adapter interface
-6. **Moomoo fallback**: Adapter fails closed if SDK is missing or OpenD unavailable
-7. **Limit-only**: No market orders permitted in MVP
+This project is currently private/personal.  
+Add a license before making it public.
