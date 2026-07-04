@@ -28,6 +28,8 @@ The application is intentionally read-only. All trading decisions must be review
 ## Key Features
 
 ### Real Account Dashboard
+<img width="1898" height="1355" alt="image" src="https://github.com/user-attachments/assets/30fc880d-b6eb-492a-984c-b38af8783e88" />
+
 
 - Portfolio value
 - Cash balance
@@ -40,6 +42,8 @@ The application is intentionally read-only. All trading decisions must be review
 ### Entry Signals
 
 Entry Signals evaluate potential new position ideas using a momentum and relative strength model.
+<img width="1889" height="1411" alt="image" src="https://github.com/user-attachments/assets/38b33e61-144f-476b-8e5e-070488c364e2" />
+
 
 Signal categories include:
 
@@ -53,6 +57,8 @@ The screener uses market data, cached historical bars, and benchmark comparison 
 ### Position Guidance
 
 Position Guidance manages existing holdings only. It does not scan the full trading universe and does not generate new entry ideas.
+<img width="1865" height="1414" alt="image" src="https://github.com/user-attachments/assets/5d545331-5329-4b02-ad52-9e0030a79c5e" />
+
 
 It combines two concepts:
 
