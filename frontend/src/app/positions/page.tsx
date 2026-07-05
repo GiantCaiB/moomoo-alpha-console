@@ -255,7 +255,7 @@ export default function PositionsPage() {
                   {activePositions.map((pos) => {
                     const weight = pos.position_pct ?? 0;
                     return (
-                      <tr className="tableRow">
+                      <tr key={pos.symbol} className="tableRow">
                         <td className="py-3 pr-4 font-mono font-bold text-text-primary">{pos.symbol}</td>
                         <td className="tableCellStatus"><PositionChip unrealizedPnl={pos.unrealized_pnl} weight={weight} /></td>
                         <td className="tableCellNumeric">{formatQuantity(pos.quantity)}</td>
