@@ -60,9 +60,19 @@ Position Guidance manages existing holdings only. It does not scan the full trad
 <img width="1865" height="1414" alt="image" src="https://github.com/user-attachments/assets/5d545331-5329-4b02-ad52-9e0030a79c5e" />
 
 
-It combines two concepts:
+### Current Holding Filtering
 
-#### Profit Tail
+Position Guidance evaluates only current broker holdings with `quantity > 0`. Old, test, or inactive symbols that exist in the database but are no longer held are hidden from the default view. This prevents stale or test rows (e.g., a symbol you no longer own) from appearing in Action Alerts, Hold Positions, or Data Issues sections.
+
+The `GET /api/v1/position-signals` endpoint fetches current broker positions before returning results. If the broker cannot be reached, the endpoint returns an empty list rather than silently falling back to all database records.
+
+An `include_inactive=true` query parameter is available for debugging and history views.
+
+### Per-Symbol Batch Behavior
+
+Each position is evaluated independently. If one symbol fails (e.g., due to a K-line cache write error), that symbol produces a `DATA_ERROR` signal while the remaining symbols continue normally. A single failure does not block the entire batch.
+
+### Profit Tail
 
 A staged profit-taking framework designed to avoid selling entire winners too early.
 
@@ -73,9 +83,9 @@ Example guidance:
 - Hold tail positions while long-term trend remains intact
 - Trim or exit tail positions when trend deteriorates
 
-#### Loss Defense
+### Loss Defense
 
-A defensive layer that prevents the strategy from becoming a “never stop loss” system.
+A defensive layer that prevents the strategy from becoming a "never stop loss" system.
 
 Example guidance:
 
@@ -180,7 +190,15 @@ Configuration for broker mode, trading universe, market data, risk limits, and r
 
 ### Labs
 
-Experimental area for future backtesting, expectancy analytics, and strategy research.
+Experimental area for future analytics and strategy research.
+
+Planned modules:
+
+- **Expectancy Lab** — Track and analyze realized entry and exit performance over time. Compute average risk/reward, win rate, and expectancy per strategy profile.
+- **Backtesting** — Run strategy profiles against historical data to simulate how signals would have performed. Compare different parameter sets.
+- **Strategy Comparison** — Side-by-side comparison of multiple strategy profiles and their signal outputs.
+- **Tail Winner Analysis** — Review positions that entered tail mode and their subsequent performance. Analyze drawdown triggers and tail exit quality.
+- **Loss Defense Impact** — Analyze how loss defense rules would have affected historical portfolio drawdown and recovery.
 
 ---
 
@@ -292,6 +310,68 @@ DATA_ERROR   -> insufficient or invalid data
 
 ---
 
+## Strategy Profiles
+
+Alpha Cockpit supports configurable strategy profiles for both Entry Signals and Position Guidance. Profiles are stored in SQLite and managed via the Settings page or API.
+
+### Entry Signal Profile
+
+- **Name:** Momentum Relative Strength v1
+- **Type:** `entry_signal`
+- Evaluates new position ideas using trend strength, relative strength vs benchmark, volume confirmation, entry quality, risk/reward, and market regime scoring.
+- Configurable via `parameters_json` in the database.
+
+### Position Guidance Profile
+
+- **Name:** Profit Tail + Loss Defense v1
+- **Type:** `position_guidance`
+- Evaluates current broker holdings for profit-taking and loss-defense signals.
+- Configurable thresholds: trim thresholds, tail entry threshold, loss defense percentages, tail exit SMA periods, drawdown exit percentage.
+
+### Profile Metadata
+
+Each profile stores:
+
+| Field | Description |
+|---|---|
+| `id` | UUID primary key |
+| `name` | Human-readable name |
+| `type` | `entry_signal` or `position_guidance` |
+| `version` | Semver version string |
+| `parameters_json` | JSON blob with tunable strategy parameters |
+| `rules_summary` | Human-readable explanation of the strategy rules |
+| `is_default` | Whether this profile is used when no explicit profile is specified |
+| `created_at` / `updated_at` | Timestamps |
+
+### Signal Storage
+
+Generated signals store the active profile's `strategy_profile_id`, `strategy_version`, and a `parameters_snapshot_json` of the parameters used at generation time. This allows reconstructing which strategy version and parameters produced a given signal, even if the profile is later modified.
+
+---
+
+## Current vs Historical Records
+
+All generated signals (entry signals and position management signals) are persisted in SQLite as historical records. The default UI and API views filter to the current context to avoid showing stale or irrelevant data.
+
+### Entry Signals Context Filtering
+
+- Default view includes only signals whose symbols are in the current **Trading Universe** and use real market data.
+- Signals for symbols no longer in the universe, or produced from local/mock data, are considered "stale" and are hidden by default.
+- Stale signals can be reviewed via `include_local` or stale-count endpoints.
+
+### Position Guidance Context Filtering
+
+- Default view includes only signals for symbols currently held in the broker account (`quantity > 0`).
+- Old or test signals for symbols no longer held (e.g., a research symbol like ZXCV) are hidden.
+- Debug/history views via `include_inactive=true` may show old records.
+
+### Stale Cleanup
+
+- **Entry Signals:** `DELETE /api/v1/signals/stale` removes signals that are local/mock, out-of-universe, or not real market data.
+- **Position Guidance:** `DELETE /api/v1/position-signals/stale` removes signals for symbols no longer in current holdings. Supports `?dry_run=true` to preview deletions.
+
+---
+
 ## Data Sources
 
 Alpha Cockpit uses multiple data sources depending on the task.
@@ -318,7 +398,35 @@ Used for:
 
 ### SQLite Cache
 
-Used to reduce repeated historical data requests and improve local runtime performance.
+Historical daily bars from yfinance are cached in the `bars_1d` table to reduce repeated requests and improve runtime performance.
+
+Key behaviors:
+
+- Cached rows store the `source` provider (e.g., `"yfinance"`) so the origin of the data is traceable.
+- The cache is updated lazily: on cache miss, bars are fetched from upstream, written to SQLite, and returned.
+- Cache write failures are isolated per symbol. A failed write for one symbol does not poison the session or affect other symbols in the same batch run.
+- A `begin_nested()` savepoint is used for cache writes so that a write failure rolls back only the cache insert, not the outer transaction.
+- Before each K-line cache write, the `source` column is explicitly set to `"yfinance"` to satisfy the NOT NULL constraint.
+
+---
+
+## API Overview
+
+Key backend endpoints for signal generation and strategy profiles:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/v1/strategy-profiles` | List all strategy profiles, optionally filtered by `type` |
+| `GET` | `/api/v1/strategy-profiles/{id}` | Get a single strategy profile by ID |
+| `POST` | `/api/v1/signals/run` | Run Entry Signal screener (evaluates Trading Universe symbols) |
+| `GET` | `/api/v1/signals` | List current entry signals (filters by Trading Universe + real market data) |
+| `GET` | `/api/v1/signals/stale-count` | Count stale/local/out-of-universe signals |
+| `DELETE` | `/api/v1/signals/stale` | Remove stale entry signals |
+| `POST` | `/api/v1/position-signals/run` | Run Position Guidance (evaluates current broker holdings) |
+| `GET` | `/api/v1/position-signals` | List latest position signals (filters by current broker holdings by default; use `?include_inactive=true` for all) |
+| `DELETE` | `/api/v1/position-signals/stale` | Remove position signals for symbols no longer held (`?dry_run=true` to preview) |
+
+All endpoints are read-only except signal generation and stale cleanup, which write to the local SQLite database only. No broker orders are ever placed or cancelled.
 
 ---
 
