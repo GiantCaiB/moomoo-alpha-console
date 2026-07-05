@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, RotateCcw, Shield, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, formatQuantity } from "@/lib/format";
 import GlassyCard from "@/components/shared/GlassyCard";
 import PriceDisplay from "@/components/shared/PriceDisplay";
 import StatusBadge from "@/components/shared/StatusBadge";
@@ -50,16 +50,17 @@ function TabButton({
 }
 
 function PositionChip({ unrealizedPnl, weight }: { unrealizedPnl: number | null; weight: number }) {
+  const chipClass = "text-[10px] px-1.5 py-0.5 rounded min-w-[5rem] text-center";
   if ((unrealizedPnl ?? 0) > 0) {
-    return <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green border border-accent-green/20">Winning</span>;
+    return <span className={`${chipClass} bg-accent-green/15 text-accent-green border border-accent-green/20`}>Winning</span>;
   }
   if ((unrealizedPnl ?? 0) < 0) {
-    return <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-red/15 text-accent-red border border-accent-red/20">Losing</span>;
+    return <span className={`${chipClass} bg-accent-red/15 text-accent-red border border-accent-red/20`}>Losing</span>;
   }
   if (weight >= 20) {
-    return <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-purple/15 text-accent-purple border border-accent-purple/20">Large Weight</span>;
+    return <span className={`${chipClass} bg-accent-purple/15 text-accent-purple border border-accent-purple/20`}>Large Weight</span>;
   }
-  return <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-hover text-text-muted border border-surface-border/70">Small Position</span>;
+  return <span className={`${chipClass} bg-surface-hover text-text-muted border border-surface-border/70`}>Small Position</span>;
 }
 
 function SignalSection({
@@ -214,8 +215,9 @@ export default function PositionsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-text-muted text-xs uppercase tracking-wider border-b border-surface-border">
+                  <tr className="tableHeader">
                     <th className="text-left py-3 pr-4">Symbol</th>
+                    <th className="text-left py-3 pr-4">Status</th>
                     <th className="text-right py-3 pr-4">Qty</th>
                     <th className="text-right py-3 pr-4">Avg Cost</th>
                     <th className="text-right py-3 pr-4">Last Price</th>
@@ -229,24 +231,20 @@ export default function PositionsPage() {
                   {activePositions.map((pos) => {
                     const weight = pos.position_pct ?? 0;
                     return (
-                      <tr key={pos.id} className="border-b border-surface-border/30 hover:bg-surface-hover/30 transition-colors">
-                        <td className="py-3 pr-4 font-mono font-bold text-text-primary">
-                          <div className="flex items-center gap-2">
-                            {pos.symbol}
-                            <PositionChip unrealizedPnl={pos.unrealized_pnl} weight={weight} />
-                          </div>
-                        </td>
-                        <td className="py-3 pr-4 text-right font-mono">{pos.quantity}</td>
-                        <td className="py-3 pr-4 text-right font-mono"><PriceDisplay value={pos.avg_cost} prefix="$" /></td>
-                        <td className="py-3 pr-4 text-right font-mono"><PriceDisplay value={pos.current_price} prefix="$" /></td>
-                        <td className={`py-3 pr-4 text-right font-mono ${(pos.unrealized_pnl ?? 0) >= 0 ? "value-up" : "value-down"}`}>
+                      <tr className="tableRow">
+                        <td className="py-3 pr-4 font-mono font-bold text-text-primary">{pos.symbol}</td>
+                        <td className="tableCellStatus"><PositionChip unrealizedPnl={pos.unrealized_pnl} weight={weight} /></td>
+                        <td className="tableCellNumeric">{formatQuantity(pos.quantity)}</td>
+                        <td className="tableCellNumeric"><PriceDisplay value={pos.avg_cost} prefix="$" /></td>
+                        <td className="tableCellNumeric"><PriceDisplay value={pos.current_price} prefix="$" /></td>
+                        <td className={`tableCellNumeric ${(pos.unrealized_pnl ?? 0) >= 0 ? "value-up" : "value-down"}`}>
                           <PriceDisplay value={pos.unrealized_pnl} prefix="$" colorize />
                         </td>
-                        <td className={`py-3 pr-4 text-right font-mono ${(pos.day_pnl ?? 0) >= 0 ? "value-up" : "value-down"}`}>
+                        <td className={`tableCellNumeric ${(pos.day_pnl ?? 0) >= 0 ? "value-up" : "value-down"}`}>
                           <PriceDisplay value={pos.day_pnl} prefix="$" colorize />
                         </td>
-                        <td className="py-3 pr-4 text-right font-mono text-accent-red"><PriceDisplay value={pos.stop_level} prefix="$" /></td>
-                        <td className="py-3 text-right font-mono text-text-secondary">{formatPercent(pos.position_pct)}</td>
+                        <td className="tableCellNumeric text-accent-red"><PriceDisplay value={pos.stop_level} prefix="$" /></td>
+                        <td className="tableCellNumeric text-text-secondary">{formatPercent(pos.position_pct)}</td>
                       </tr>
                     );
                   })}

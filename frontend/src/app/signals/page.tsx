@@ -324,37 +324,35 @@ function SignalRow({
   };
 
   return (
-    <div>
+    <div className="grid grid-cols-[72px_110px_150px_1fr_120px_32px]">
       <div
-        className="flex items-center justify-between py-2.5 px-3 rounded-lg
-                   bg-surface-hover/30 hover:bg-surface-hover/50 cursor-pointer
-                   transition-colors"
+        className="contents cursor-pointer"
         onClick={onToggle}
       >
-        <div className="flex items-center gap-2">
-          <span className="font-mono font-bold text-text-primary text-sm">
-            {sig.symbol}
-          </span>
+        <span className="font-mono font-bold text-text-primary text-sm py-2.5">
+          {sig.symbol}
+        </span>
+        <span className="py-2.5">
           <StatusBadge status={sig.verdict} />
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${badge.className}`}>
-            {badge.label}
-          </span>
-          <div className="flex items-center gap-1 ml-1 flex-wrap">
-            {(sig.scores || []).slice(0, 3).map((s: any) => (
-              <div
-                key={s.category}
-                className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-hover"
-                title={`${s.category}: ${s.score}/${s.max_score}`}
-              >
-                <span className="text-[10px] text-text-muted">{reasonLabels[s.category] ?? s.category}</span>
-                <span className="text-[10px] font-mono text-accent-green">
-                  {Math.round(s.score)}
-                </span>
-              </div>
-            ))}
-          </div>
+        </span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium truncate self-center ${badge.className}`}>
+          {badge.label}
+        </span>
+        <div className="flex items-center gap-1 flex-wrap py-2.5">
+          {(sig.scores || []).slice(0, 3).map((s: any) => (
+            <div
+              key={s.category}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-hover"
+              title={`${s.category}: ${s.score}/${s.max_score}`}
+            >
+              <span className="text-[10px] text-text-muted">{reasonLabels[s.category] ?? s.category}</span>
+              <span className="text-[10px] font-mono text-accent-green">
+                {Math.round(s.score)}
+              </span>
+            </div>
+          ))}
         </div>
-        <div className="flex items-center gap-4 text-xs font-mono text-text-secondary">
+        <div className="text-right font-mono tabular-nums text-xs text-text-secondary self-center py-2.5">
           {sig.data_quality_status === "OK" ? (
             <span>
               Score{" "}
@@ -365,12 +363,14 @@ function SignalRow({
           ) : (
             <span className="text-accent-red font-bold">Data error</span>
           )}
+        </div>
+        <div className="self-center justify-self-center py-2.5">
           <Info size={14} className="text-text-muted" />
         </div>
       </div>
 
       {isSelected && (
-        <div className="mx-3 mb-2 p-4 rounded-lg bg-surface-hover/50 border border-surface-border/50">
+        <div className="col-span-full mx-3 mb-2 p-4 rounded-lg bg-surface-hover/50 border border-surface-border/50">
           {!sig.is_real_market_data && (
             <div className="mb-3 flex items-start gap-2 p-2 rounded bg-accent-amber/10 border border-accent-amber/30 text-accent-amber text-xs">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />

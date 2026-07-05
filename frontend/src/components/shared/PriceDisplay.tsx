@@ -32,8 +32,8 @@ export default function PriceDisplay({
         className
       )}
     >
-      {prefix}
       {isNegative && "-"}
+      {prefix}
       {Math.abs(value).toFixed(decimals)}
       {suffix}
     </span>

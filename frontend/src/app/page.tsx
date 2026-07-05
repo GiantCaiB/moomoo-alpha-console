@@ -25,8 +25,9 @@ import {
   Eye,
   FlaskConical,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { wsClient } from "@/lib/websocket";
+import type { PositionResponse } from "@/lib/types";
 
 export default function Cockpit() {
   const { health } = useBrokerHealth();
@@ -76,6 +77,10 @@ export default function Cockpit() {
     wsClient.connect();
     return () => wsClient.disconnect();
   }, []);
+
+  type SortKey = "symbol" | "quantity" | "avg_cost" | "current_price" | "market_value" | "unrealized_pnl" | "position_pct";
+  const [sortKey, setSortKey] = useState<SortKey>("position_pct");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const env = health?.account_environment ?? "mock";
   const isMoomoo = env.startsWith("moomoo");
@@ -494,39 +499,95 @@ export default function Cockpit() {
       <GlassyCard title="Portfolio Holdings">
         {(() => {
           const activePositions = positions?.filter((p) => (p.quantity ?? 0) > 0) ?? [];
-          return activePositions.length > 0 ? (
+
+          const getSortValue = (pos: PositionResponse, key: SortKey): number | string => {
+            switch (key) {
+              case "symbol": return pos.symbol;
+              case "quantity": return pos.quantity ?? 0;
+              case "avg_cost": return pos.avg_cost ?? 0;
+              case "current_price": return pos.current_price ?? 0;
+              case "market_value": return (pos.quantity ?? 0) * (pos.current_price ?? 0);
+              case "unrealized_pnl": return pos.unrealized_pnl ?? 0;
+              case "position_pct": return pos.position_pct ?? 0;
+            }
+          };
+
+          const sortedPositions = [...activePositions].sort((a, b) => {
+            const va = getSortValue(a, sortKey);
+            const vb = getSortValue(b, sortKey);
+            let cmp = 0;
+            if (typeof va === "string" && typeof vb === "string") {
+              cmp = va.localeCompare(vb);
+            } else {
+              cmp = (va as number) - (vb as number);
+            }
+            return sortDir === "asc" ? cmp : -cmp;
+          });
+
+          const totalMktValue = activePositions.reduce(
+            (s, p) => s + (p.quantity ?? 0) * (p.current_price ?? 0),
+            0
+          );
+
+          const sortTh = (label: string, key: SortKey, align: string) => {
+            const isActive = sortKey === key;
+            return (
+              <th
+                className={`${align} py-2 pr-4 cursor-pointer select-none hover:text-text-primary transition-colors`}
+                onClick={() => {
+                  if (sortKey === key) {
+                    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                  } else {
+                    setSortKey(key);
+                    setSortDir("asc");
+                  }
+                }}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {label}
+                  {isActive && <span className="text-[10px]">{sortDir === "asc" ? "▲" : "▼"}</span>}
+                </span>
+              </th>
+            );
+          };
+
+          return sortedPositions.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-text-muted text-xs uppercase tracking-wider border-b border-surface-border">
-                    <th className="text-left py-2 pr-4">Symbol</th>
-                    <th className="text-right py-2 pr-4">Qty</th>
-                    <th className="text-right py-2 pr-4">Avg Cost</th>
-                    <th className="text-right py-2 pr-4">Price</th>
-                    <th className="text-right py-2 pr-4">Unrealized P&L</th>
-                    <th className="text-right py-2 pr-4">% of Portfolio</th>
+                  <tr className="tableHeader">
+                    {sortTh("Symbol", "symbol", "text-left")}
+                    {sortTh("Qty", "quantity", "text-right")}
+                    {sortTh("Avg Cost", "avg_cost", "text-right")}
+                    {sortTh("Price", "current_price", "text-right")}
+                    {sortTh("Mkt Value", "market_value", "text-right")}
+                    {sortTh("Unrealized P&L", "unrealized_pnl", "text-right")}
+                    {sortTh("% of Portfolio", "position_pct", "text-right")}
                   </tr>
                 </thead>
                 <tbody>
-                  {activePositions.map((pos) => (
+                  {sortedPositions.map((pos) => (
                     <tr
                       key={pos.id}
-                      className="border-b border-surface-border/50 hover:bg-surface-hover/30"
+                      className="tableRow"
                     >
-                      <td className="py-2.5 pr-4 font-mono font-medium">
+                      <td className="tableCell font-medium">
                         {pos.symbol}
                       </td>
-                      <td className="py-2.5 pr-4 text-right font-mono">
+                      <td className="tableCellNumeric">
                         {formatQuantity(pos.quantity)}
                       </td>
-                      <td className="py-2.5 pr-4 text-right font-mono">
+                      <td className="tableCellNumeric">
                         {formatPrice(pos.avg_cost)}
                       </td>
-                      <td className="py-2.5 pr-4 text-right font-mono">
+                      <td className="tableCellNumeric">
                         {formatPrice(pos.current_price)}
                       </td>
+                      <td className="tableCellNumeric">
+                        {formatPrice((pos.quantity ?? 0) * (pos.current_price ?? 0))}
+                      </td>
                       <td
-                        className={`py-2.5 pr-4 text-right font-mono ${
+                        className={`tableCellNumeric ${
                           (pos.unrealized_pnl ?? 0) >= 0
                             ? "value-up"
                             : "value-down"
@@ -534,12 +595,31 @@ export default function Cockpit() {
                       >
                         {formatMoney(pos.unrealized_pnl)}
                       </td>
-                      <td className="py-2.5 text-right font-mono text-text-secondary">
+                      <td className="tableCellNumeric text-text-secondary">
                         {formatPercent(pos.position_pct)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="border-t border-surface-border font-medium text-text-primary">
+                    <td className="py-2.5 pr-4">Total</td>
+                    <td className="tableCellNumeric">
+                      {formatQuantity(activePositions.reduce((s, p) => s + (p.quantity ?? 0), 0))}
+                    </td>
+                    <td className="tableCellNumeric text-text-muted">--</td>
+                    <td className="tableCellNumeric text-text-muted">--</td>
+                    <td className="tableCellNumeric">
+                      {formatPrice(totalMktValue)}
+                    </td>
+                    <td className="tableCellNumeric">
+                      {formatMoney(activePositions.reduce((s, p) => s + (p.unrealized_pnl ?? 0), 0))}
+                    </td>
+                    <td className="tableCellNumeric">
+                      {formatPercent(activePositions.reduce((s, p) => s + (p.position_pct ?? 0), 0))}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           ) : (

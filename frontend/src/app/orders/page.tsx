@@ -51,65 +51,148 @@ export default function OrdersPage() {
 
       {isLoading ? (
         <div className="h-40 bg-surface-hover animate-pulse rounded-xl" />
-      ) : (
-      <div className="space-y-4">
+      ) : orders && orders.length > 0 ? (
+        <div className="space-y-4">
           {pending.length > 0 && (
             <GlassyCard title="Pending" neon="amber">
-              {pending.map((o) => (
-                <OrderRow
-                  key={o.id}
-                  order={o}
-                  readOnly={readOnly}
-                  onCancel={
-                    !readOnly && !cancelMutation.isPending
-                      ? () => cancelMutation.mutate(o.id)
-                      : undefined
-                  }
-                />
-              ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[820px]">
+                  <thead>
+                    <tr className="tableHeader">
+                      <th className="text-left py-2 pr-4">Symbol</th>
+                      <th className="text-center py-2 pr-4">Side</th>
+                      <th className="text-center py-2 pr-4">Status</th>
+                      <th className="text-right py-2 pr-4">Qty</th>
+                      <th className="text-right py-2 pr-4">Limit Price</th>
+                      <th className="text-right py-2 pr-4">Filled</th>
+                      <th className="text-right py-2 pr-4">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pending.map((o) => (
+                      <OrderRow
+                        key={o.id}
+                        order={o}
+                        readOnly={readOnly}
+                        onCancel={
+                          !readOnly && !cancelMutation.isPending
+                            ? () => cancelMutation.mutate(o.id)
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </GlassyCard>
           )}
 
           {submitted.length > 0 && (
             <GlassyCard title="Submitted">
-              {submitted.map((o) => (
-                <OrderRow key={o.id} order={o} readOnly={readOnly} />
-              ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[820px]">
+                  <thead>
+                    <tr className="tableHeader">
+                      <th className="text-left py-2 pr-4">Symbol</th>
+                      <th className="text-center py-2 pr-4">Side</th>
+                      <th className="text-center py-2 pr-4">Status</th>
+                      <th className="text-right py-2 pr-4">Qty</th>
+                      <th className="text-right py-2 pr-4">Limit Price</th>
+                      <th className="text-right py-2 pr-4">Filled</th>
+                      <th className="text-right py-2 pr-4">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {submitted.map((o) => (
+                      <OrderRow key={o.id} order={o} readOnly={readOnly} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </GlassyCard>
           )}
 
           {filled.length > 0 && (
             <GlassyCard title="Filled">
-              {filled.map((o) => (
-                <OrderRow key={o.id} order={o} readOnly={readOnly} />
-              ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[820px]">
+                  <thead>
+                    <tr className="tableHeader">
+                      <th className="text-left py-2 pr-4">Symbol</th>
+                      <th className="text-center py-2 pr-4">Side</th>
+                      <th className="text-center py-2 pr-4">Status</th>
+                      <th className="text-right py-2 pr-4">Qty</th>
+                      <th className="text-right py-2 pr-4">Limit Price</th>
+                      <th className="text-right py-2 pr-4">Filled</th>
+                      <th className="text-right py-2 pr-4">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filled.map((o) => (
+                      <OrderRow key={o.id} order={o} readOnly={readOnly} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </GlassyCard>
           )}
 
           {cancelled.length > 0 && (
             <GlassyCard title="Cancelled">
-              {cancelled.map((o) => (
-                <OrderRow key={o.id} order={o} readOnly={readOnly} />
-              ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[820px]">
+                  <thead>
+                    <tr className="tableHeader">
+                      <th className="text-left py-2 pr-4">Symbol</th>
+                      <th className="text-center py-2 pr-4">Side</th>
+                      <th className="text-center py-2 pr-4">Status</th>
+                      <th className="text-right py-2 pr-4">Qty</th>
+                      <th className="text-right py-2 pr-4">Limit Price</th>
+                      <th className="text-right py-2 pr-4">Filled</th>
+                      <th className="text-right py-2 pr-4">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cancelled.map((o) => (
+                      <OrderRow key={o.id} order={o} readOnly={readOnly} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </GlassyCard>
           )}
 
           {rejected.length > 0 && (
             <GlassyCard title="Rejected" neon="red">
-              {rejected.map((o) => (
-                <OrderRow key={o.id} order={o} readOnly={readOnly} />
-              ))}
-            </GlassyCard>
-          )}
-
-          {orders?.length === 0 && (
-            <GlassyCard>
-              <div className="text-center py-12 text-text-muted text-sm">
-                No orders yet. Open orders are managed in moomoo.
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[820px]">
+                  <thead>
+                    <tr className="tableHeader">
+                      <th className="text-left py-2 pr-4">Symbol</th>
+                      <th className="text-center py-2 pr-4">Side</th>
+                      <th className="text-center py-2 pr-4">Status</th>
+                      <th className="text-right py-2 pr-4">Qty</th>
+                      <th className="text-right py-2 pr-4">Limit Price</th>
+                      <th className="text-right py-2 pr-4">Filled</th>
+                      <th className="text-right py-2 pr-4">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rejected.map((o) => (
+                      <OrderRow key={o.id} order={o} readOnly={readOnly} />
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </GlassyCard>
           )}
         </div>
+      ) : (
+        <GlassyCard>
+          <div className="text-center py-12 text-text-muted text-sm">
+            No orders yet. Open orders are managed in moomoo.
+          </div>
+        </GlassyCard>
       )}
     </div>
   );
@@ -125,31 +208,14 @@ function OrderRow({
   readOnly?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-surface-border/30 last:border-0">
-      <div className="flex items-center gap-3">
-        <span className="font-mono font-bold text-sm text-text-primary">{order.symbol}</span>
-        <span
-          className={`text-xs font-mono ${
-            order.side === "BUY" ? "value-up" : "value-down"
-          }`}
-        >
-          {order.side}
-        </span>
-        <StatusBadge status={order.status} />
-      </div>
-      <div className="flex items-center gap-4 text-xs font-mono text-text-secondary">
-        <span>{order.quantity ?? "--"} @ <PriceDisplay value={order.limit_price} prefix="$" /></span>
-        <span>
-          Filled: {order.filled_quantity}/{order.quantity}
-        </span>
-        <span>
-          {new Date(order.created_at).toLocaleString()}
-        </span>
-        {order.reason && (
-          <span className="text-text-muted max-w-xs truncate" title={order.reason}>
-            {order.reason}
-          </span>
-        )}
+    <tr className="tableRow">
+      <td className="py-2.5 pr-4 font-mono font-bold text-text-primary">{order.symbol}</td>
+      <td className={`py-2.5 pr-4 text-center font-mono text-sm ${order.side === "BUY" ? "value-up" : "value-down"}`}>{order.side}</td>
+      <td className="py-2.5 pr-4"><StatusBadge status={order.status} /></td>
+      <td className="tableCellNumeric">{order.quantity ?? "--"}</td>
+      <td className="tableCellNumeric"><PriceDisplay value={order.limit_price} prefix="$" /></td>
+      <td className="tableCellNumeric text-xs">{order.filled_quantity}/{order.quantity}</td>
+      <td className="py-2.5 text-right">
         {readOnly ? (
           <span className="inline-flex items-center gap-1 text-text-muted text-xs">
             <ShieldBan size={12} />
@@ -163,8 +229,10 @@ function OrderRow({
           >
             Cancel
           </button>
-        ) : null}
-      </div>
-    </div>
+        ) : (
+          <span className="text-text-muted text-xs">--</span>
+        )}
+      </td>
+    </tr>
   );
 }

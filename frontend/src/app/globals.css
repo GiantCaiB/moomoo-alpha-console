@@ -92,4 +92,29 @@ body {
   .sidebar-link-active {
     @apply bg-accent-green/10 text-accent-green border border-accent-green/30 shadow-glow;
   }
+
+  .tableShell {
+    @apply w-full text-sm;
+    overflow-x: auto;
+  }
+
+  .tableHeader {
+    @apply text-text-muted text-xs uppercase tracking-wider border-b border-surface-border;
+  }
+
+  .tableRow {
+    @apply border-b border-surface-border/30 hover:bg-surface-hover/30 transition-colors;
+  }
+
+  .tableCell {
+    @apply py-3 pr-4 text-left font-mono tabular-nums;
+  }
+
+  .tableCellNumeric {
+    @apply py-3 pr-4 text-right font-mono tabular-nums;
+  }
+
+  .tableCellStatus {
+    @apply py-3 pr-4 text-left;
+  }
 }
