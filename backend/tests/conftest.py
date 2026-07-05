@@ -129,7 +129,7 @@ def api_kline_service():
 
 
 @pytest.fixture
-def api_app(api_broker, api_risk_engine, api_market_data, api_kline_service):
+async def api_app(api_broker, api_risk_engine, api_market_data, api_kline_service):
     from app.main import app
     from app.api.dependencies import (
         set_broker,
@@ -143,6 +143,9 @@ def api_app(api_broker, api_risk_engine, api_market_data, api_kline_service):
     from app.services.runtime.state import RuntimeStateService
     from app.services.settings.trading_universe import TradingUniverseResolver
     from app.services.market_data.price_resolver import PriceResolver
+    from app.db.seed import seed_strategy_profiles
+    from app.db.session import create_session_factory, init_db
+    await init_db()
     set_broker(api_broker)
     set_risk_engine(api_risk_engine)
     set_market_data(api_market_data)
@@ -151,4 +154,7 @@ def api_app(api_broker, api_risk_engine, api_market_data, api_kline_service):
     set_trading_universe_resolver(resolver)
     set_price_resolver(PriceResolver(api_broker, api_kline_service))
     set_runtime_state(RuntimeStateService(api_broker, api_kline_service, resolver))
+    factory = create_session_factory()
+    async with factory() as session:
+        await seed_strategy_profiles(session)
     return app

@@ -2,13 +2,15 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, RotateCcw, Shield, Sparkles } from "lucide-react";
+import { AlertTriangle, RotateCcw, Shield, Sparkles, BookOpen } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatPercent, formatQuantity } from "@/lib/format";
 import GlassyCard from "@/components/shared/GlassyCard";
 import PriceDisplay from "@/components/shared/PriceDisplay";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { getSourceBadge } from "@/lib/source_badge";
+import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
+import type { StrategyProfileResponse } from "@/lib/types";
 
 type PortfolioTab = "holdings" | "management";
 
@@ -88,6 +90,9 @@ function SignalSection({
                     <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${getSourceBadge(row.data_source).className}`}>
                       {getSourceBadge(row.data_source).label}
                     </span>
+                    <span className="text-[10px] text-text-muted font-mono">
+                      {row.generated_at ? new Date(row.generated_at).toLocaleString() : "--"}
+                    </span>
                   </div>
                   <div className="text-xs text-text-secondary font-mono">
                     Gain {formatPercent(row.gain_pct)} · Drawdown {formatPercent(row.drawdown_from_high)}
@@ -155,6 +160,16 @@ export default function PositionsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<PortfolioTab>("holdings");
   const [runMessage, setRunMessage] = useState<string | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [rulesProfile, setRulesProfile] = useState<StrategyProfileResponse | null>(null);
+
+  const { data: positionProfiles } = useQuery({
+    queryKey: ["strategy-profiles", "position_guidance"],
+    queryFn: () => api.strategyProfiles("position_guidance"),
+  });
+  const defaultProfile = positionProfiles?.find((p) => p.is_default) ?? positionProfiles?.[0] ?? null;
+  const activeProfileId = selectedProfileId ?? defaultProfile?.id ?? null;
 
   const { data: positions, isLoading: positionsLoading } = useQuery({
     queryKey: ["positions"],
@@ -188,9 +203,18 @@ export default function PositionsPage() {
 
   const onRun = async () => {
     setRunMessage(null);
-    const result = await api.runPositionSignals();
-    setRunMessage(`Status: ${result.status} | Positions: ${result.positions_scanned} | Signals: ${result.signals_generated} | Errors: ${result.data_error_count}`);
-    await queryClient.invalidateQueries({ queryKey: ["position-signals"] });
+    setRunError(null);
+    try {
+      const result = await api.runPositionSignals(activeProfileId ?? undefined);
+      if (result.status === "FAILED") {
+        setRunError(result.error ?? "Position guidance run failed");
+        return;
+      }
+      setRunMessage(`Run completed: ${result.signals_generated} signals, ${result.data_error_count} data errors`);
+      await queryClient.invalidateQueries({ queryKey: ["position-signals"] });
+    } catch (err) {
+      setRunError(err instanceof Error ? err.message : "Network error");
+    }
   };
 
   return (
@@ -266,13 +290,57 @@ export default function PositionsPage() {
                 Guidance only. No trades are placed.
               </p>
             </div>
-            <button
-              onClick={onRun}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-purple/10 text-accent-purple border border-accent-purple/25 font-medium hover:bg-accent-purple/15 transition-colors"
-            >
-              <RotateCcw size={16} />
-              Refresh Position Guidance
-            </button>
+            <div className="flex flex-col items-end gap-2">
+              {positionProfiles && positionProfiles.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Guidance Strategy:</span>
+                  <div className="relative">
+                    <select
+                      value={activeProfileId ?? ""}
+                      onChange={(e) => setSelectedProfileId(e.target.value || null)}
+                      className="appearance-none px-3 py-2 pr-8 rounded-xl bg-surface border border-surface-border
+                                 text-sm font-medium text-text-primary cursor-pointer
+                                 focus:outline-none focus:border-accent-blue"
+                    >
+                      {positionProfiles.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                      <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const prof = positionProfiles.find((p) => p.id === activeProfileId);
+                      if (prof) setRulesProfile(prof);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl
+                               bg-surface-hover border border-surface-border
+                               text-text-muted text-sm font-medium
+                               hover:text-text-primary transition-colors"
+                    title="View strategy rules"
+                  >
+                    <BookOpen size={14} />
+                    View Rules
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Actions:</span>
+                <button
+                  onClick={onRun}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-purple/10 text-accent-purple border border-accent-purple/25 font-medium hover:bg-accent-purple/15 transition-colors"
+                >
+                  <RotateCcw size={16} />
+                  Refresh Position Guidance
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="mb-1 px-4 py-3 rounded-xl border border-accent-amber/25 bg-accent-amber/10 text-sm text-accent-amber flex items-center gap-2">
@@ -281,6 +349,13 @@ export default function PositionsPage() {
           </div>
 
           {runMessage && <div className="text-sm text-text-secondary font-mono">{runMessage}</div>}
+          {runError && (
+            <div className="px-4 py-3 rounded-xl border border-accent-red/25 bg-accent-red/10 text-sm text-accent-red flex items-center gap-2">
+              <AlertTriangle size={16} />
+              <span className="flex-1">{runError}</span>
+              <button onClick={() => setRunError(null)} className="text-accent-red/60 hover:text-accent-red text-xs font-medium">Dismiss</button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <GlassyCard><div className="flex items-center justify-between"><div><p className="text-[11px] uppercase tracking-wider text-text-muted mb-1">Positions Checked</p><p className="text-2xl font-semibold font-mono text-text-primary">{stats.total}</p></div><Shield size={20} className="text-accent-blue/40" /></div></GlassyCard>
@@ -307,6 +382,10 @@ export default function PositionsPage() {
             emptyText={hasRun ? "No data issues." : "Run Position Guidance to check for data issues."}
           />
         </div>
+      )}
+
+      {rulesProfile && (
+        <StrategyRulesModal profile={rulesProfile} onClose={() => setRulesProfile(null)} />
       )}
     </div>
   );

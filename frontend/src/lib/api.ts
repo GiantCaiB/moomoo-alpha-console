@@ -15,7 +15,9 @@ import type {
   RunSignalsResponse,
   StaleSignalCountResponse,
   PositionSignalRunResponse,
+  DeleteStalePositionSignalsResponse,
   MarketDataStatusResponse,
+  StrategyProfileResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8020";
@@ -72,20 +74,39 @@ export const api = {
     return fetcher<SignalResponse[]>(`/api/v1/signals${params}`);
   },
 
-  runSignals: () =>
-    fetcher<RunSignalsResponse>("/api/v1/signals/run", { method: "POST" }),
+  runSignals: (strategyProfileId?: string) =>
+    fetcher<RunSignalsResponse>("/api/v1/signals/run", {
+      method: "POST",
+      body: strategyProfileId
+        ? JSON.stringify({ strategy_profile_id: strategyProfileId })
+        : "{}",
+    }),
 
-  positionSignals: (includeHistory?: boolean) => {
-    const params = includeHistory ? "?include_history=true" : "";
+  positionSignals: (includeHistory?: boolean, includeInactive?: boolean) => {
+    const params = new URLSearchParams();
+    if (includeHistory) params.set("include_history", "true");
+    if (includeInactive) params.set("include_inactive", "true");
+    const qs = params.toString();
     return fetcher<PositionManagementSignalResponse[]>(
-      `/api/v1/position-signals${params}`
+      `/api/v1/position-signals${qs ? "?" + qs : ""}`
     );
   },
 
-  runPositionSignals: () =>
+  runPositionSignals: (strategyProfileId?: string) =>
     fetcher<PositionSignalRunResponse>("/api/v1/position-signals/run", {
       method: "POST",
+      body: strategyProfileId
+        ? JSON.stringify({ strategy_profile_id: strategyProfileId })
+        : "{}",
     }),
+
+  deleteStalePositionSignals: (dryRun?: boolean) => {
+    const params = dryRun ? "?dry_run=true" : "";
+    return fetcher<DeleteStalePositionSignalsResponse>(
+      `/api/v1/position-signals/stale${params}`,
+      { method: "DELETE" }
+    );
+  },
 
   riskStatus: () => fetcher<RiskStatusResponse>("/api/v1/risk/status"),
 
@@ -126,4 +147,14 @@ export const api = {
 
   marketDataStatus: () =>
     fetcher<MarketDataStatusResponse>("/api/v1/market-data/status"),
+
+  strategyProfiles: (type?: string) => {
+    const params = type ? `?type=${encodeURIComponent(type)}` : "";
+    return fetcher<StrategyProfileResponse[]>(
+      `/api/v1/strategy-profiles${params}`
+    );
+  },
+
+  strategyProfile: (id: string) =>
+    fetcher<StrategyProfileResponse>(`/api/v1/strategy-profiles/${id}`),
 };

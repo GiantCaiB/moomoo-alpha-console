@@ -1,16 +1,22 @@
 import json
 from collections import OrderedDict
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.schemas.signal import SignalResponse, SignalScoreResponse, StaleSignalCountResponse
 from app.models.signal import Signal
+from app.models.strategy_profile import StrategyProfile
 from app.models.signal_score import SignalScore
 from app.db.session import get_session
 from app.api.dependencies import get_runtime_state
 from app.strategies.momentum_relative_strength import run_momentum_screener
 from app.services.kline.symbol_map import normalize_symbol
+
+
+class RunSignalsRequest(BaseModel):
+    strategy_profile_id: str | None = None
 
 router = APIRouter()
 
@@ -100,8 +106,31 @@ async def list_signals(
 
 
 @router.post("/api/v1/signals/run")
-async def run_signals(session: AsyncSession = Depends(get_session)):
-    strategy_run = await run_momentum_screener(session)
+async def run_signals(
+    req: RunSignalsRequest | None = None,
+    session: AsyncSession = Depends(get_session),
+):
+    strategy_profile_id = None
+    strategy_version = None
+    parameters = None
+
+    if req and req.strategy_profile_id:
+        result = await session.execute(
+            select(StrategyProfile).where(StrategyProfile.id == req.strategy_profile_id)
+        )
+        profile = result.scalar_one_or_none()
+        if profile is None:
+            return {"success": False, "error": f"Strategy profile {req.strategy_profile_id} not found"}
+        strategy_profile_id = profile.id
+        strategy_version = profile.version
+        parameters = json.loads(profile.parameters_json) if profile.parameters_json else {}
+
+    strategy_run = await run_momentum_screener(
+        session,
+        strategy_profile_id=strategy_profile_id,
+        strategy_version=strategy_version,
+        parameters=parameters,
+    )
     runtime_state = await get_runtime_state().build(session)
     universe = runtime_state.trading_universe
     symbols_scanned = [symbol for symbol in (normalize_symbol(item) for item in universe) if symbol]

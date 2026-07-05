@@ -1,31 +1,87 @@
+import json
+import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 
 from app.api.dependencies import get_broker, get_kline_service, get_price_resolver
 from app.db.session import get_session
 from app.models.position_lifecycle_state import PositionLifecycleState
+from app.models.position_management_signal import PositionManagementSignal
+from app.models.strategy_profile import StrategyProfile
 from app.schemas.position_management import PositionManagementSignalResponse, PositionSignalRunResponse
 from app.services.position_management.profit_tail import ProfitTailStrategyService
+
+logger = logging.getLogger(__name__)
+
+
+class RunPositionSignalsRequest(BaseModel):
+    strategy_profile_id: str | None = None
+
+
+class DeleteStalePositionSignalsResponse(BaseModel):
+    success: bool
+    deleted_count: int = 0
+    deleted_symbols: list[str] = []
+    active_symbols: list[str] = []
+
 
 router = APIRouter(tags=["position-signals"])
 
 
-def _service() -> ProfitTailStrategyService:
+def _service(
+    strategy_profile_id: str | None = None,
+    strategy_version: str | None = None,
+    parameters: dict | None = None,
+) -> ProfitTailStrategyService:
     return ProfitTailStrategyService(
         broker=get_broker(),
         kline_service=get_kline_service(),
         price_resolver=get_price_resolver(),
+        strategy_profile_id=strategy_profile_id,
+        strategy_version=strategy_version,
+        parameters=parameters,
     )
 
 
 @router.post("/api/v1/position-signals/run", response_model=PositionSignalRunResponse)
-async def run_position_signals(session: AsyncSession = Depends(get_session)):
-    service = _service()
+async def run_position_signals(
+    req: RunPositionSignalsRequest | None = None,
+    session: AsyncSession = Depends(get_session),
+):
+    strategy_profile_id = None
+    strategy_version = None
+    parameters = None
+
+    if req and req.strategy_profile_id:
+        result = await session.execute(
+            select(StrategyProfile).where(StrategyProfile.id == req.strategy_profile_id)
+        )
+        profile = result.scalar_one_or_none()
+        if profile is None:
+            return PositionSignalRunResponse(
+                status="FAILED",
+                positions_scanned=0,
+                signals_generated=0,
+                data_error_count=0,
+                read_only=True,
+                error=f"Strategy profile {req.strategy_profile_id} not found",
+            )
+        strategy_profile_id = profile.id
+        strategy_version = profile.version
+        parameters = json.loads(profile.parameters_json) if profile.parameters_json else {}
+
+    service = _service(
+        strategy_profile_id=strategy_profile_id,
+        strategy_version=strategy_version,
+        parameters=parameters,
+    )
     try:
         _, summary = await service.run(session)
         return PositionSignalRunResponse(**summary)
     except Exception as exc:
+        logger.exception("Position guidance run failed: %s", exc)
         await session.rollback()
         return PositionSignalRunResponse(
             status="FAILED",
@@ -33,17 +89,28 @@ async def run_position_signals(session: AsyncSession = Depends(get_session)):
             signals_generated=0,
             data_error_count=0,
             read_only=True,
-            error=str(exc),
+            error=f"Position guidance run failed: {exc}",
         )
 
 
 @router.get("/api/v1/position-signals", response_model=list[PositionManagementSignalResponse])
 async def list_position_signals(
     include_history: bool = False,
+    include_inactive: bool = Query(False, alias="include_inactive"),
     session: AsyncSession = Depends(get_session),
 ):
     service = _service()
-    signal_rows = await service.list_signals(session, include_history=include_history)
+
+    active_symbols: set[str] | None = None
+    if not include_inactive:
+        try:
+            positions = await get_broker().get_positions()
+            active_symbols = {p.symbol.upper().strip() for p in positions if (p.quantity or 0) > 0}
+        except Exception as exc:
+            logger.error("Failed to fetch broker positions for position-signals filter: %s", exc)
+            return []
+
+    signal_rows = await service.list_signals(session, include_history=include_history, active_symbols=active_symbols)
     state_result = await session.execute(select(PositionLifecycleState))
     states = {state.symbol: state for state in state_result.scalars().all()}
     responses: list[PositionManagementSignalResponse] = []
@@ -82,3 +149,39 @@ async def list_position_signals(
             )
         )
     return responses
+
+
+@router.delete("/api/v1/position-signals/stale", response_model=DeleteStalePositionSignalsResponse)
+async def delete_stale_position_signals(
+    dry_run: bool = Query(False, alias="dry_run"),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        positions = await get_broker().get_positions()
+        active_symbols = {p.symbol.upper().strip() for p in positions if (p.quantity or 0) > 0}
+    except Exception as exc:
+        logger.error("Failed to fetch broker positions for stale cleanup: %s", exc)
+        return DeleteStalePositionSignalsResponse(
+            success=False,
+            deleted_count=0,
+            deleted_symbols=[],
+            active_symbols=[],
+        )
+
+    result = await session.execute(select(PositionManagementSignal))
+    all_signals = result.scalars().all()
+
+    stale = [s for s in all_signals if s.symbol.upper().strip() not in active_symbols]
+    deleted_symbols = sorted({s.symbol for s in stale})
+
+    if not dry_run:
+        for sig in stale:
+            await session.delete(sig)
+        await session.commit()
+
+    return DeleteStalePositionSignalsResponse(
+        success=True,
+        deleted_count=len(stale),
+        deleted_symbols=deleted_symbols,
+        active_symbols=sorted(active_symbols),
+    )

@@ -67,6 +67,7 @@ async def init_db() -> None:
         RiskEvent,
         Signal,
         SignalScore,
+        StrategyProfile,
         StrategyRun,
         Symbol,
         TradeJournalEntry,

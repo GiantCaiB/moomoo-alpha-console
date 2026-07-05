@@ -5,8 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useBrokerHealth } from "@/app/providers";
 import GlassyCard from "@/components/shared/GlassyCard";
-import { AlertTriangle, CheckCircle, XCircle, Plus, X, RotateCcw, Save, BarChart3 } from "lucide-react";
-import type { MarketDataStatusResponse } from "@/lib/types";
+import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
+import { AlertTriangle, CheckCircle, XCircle, Plus, X, RotateCcw, Save, BarChart3, BookOpen } from "lucide-react";
+import type { MarketDataStatusResponse, StrategyProfileResponse } from "@/lib/types";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
@@ -16,6 +17,18 @@ export default function SettingsPage() {
   });
 
   const { health: brokerHealth, isLoading: bhLoading } = useBrokerHealth();
+
+  const { data: entryProfiles } = useQuery({
+    queryKey: ["strategy-profiles", "entry"],
+    queryFn: () => api.strategyProfiles("entry"),
+  });
+
+  const { data: positionProfiles } = useQuery({
+    queryKey: ["strategy-profiles", "position_guidance"],
+    queryFn: () => api.strategyProfiles("position_guidance"),
+  });
+
+  const [rulesProfile, setRulesProfile] = useState<StrategyProfileResponse | null>(null);
 
   const { data: mdStatus } = useQuery<MarketDataStatusResponse>({
     queryKey: ["market-data-status"],
@@ -250,6 +263,77 @@ export default function SettingsPage() {
           ) : (
             <p className="text-sm text-text-muted">No health data</p>
           )}
+        </GlassyCard>
+
+        <GlassyCard title="Strategy Profiles">
+          <div className="space-y-4">
+            <p className="text-xs text-text-muted">
+              Built-in strategy profiles for entry signals and position guidance.
+              These are read-only in this version.
+            </p>
+
+            <div>
+              <p className="text-sm font-medium text-text-primary mb-2">Entry Strategy</p>
+              {entryProfiles && entryProfiles.length > 0 ? (
+                <div className="space-y-2">
+                  {entryProfiles.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-hover">
+                      <div>
+                        <span className="text-sm font-medium text-text-primary">{p.name}</span>
+                        {p.is_default && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue font-medium">
+                            Default
+                          </span>
+                        )}
+                        <p className="text-xs text-text-muted mt-0.5">v{p.version}</p>
+                      </div>
+                      <button
+                        onClick={() => setRulesProfile(p)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-surface-border
+                                   text-text-muted text-xs font-medium hover:text-text-primary transition-colors"
+                      >
+                        <BookOpen size={12} />
+                        View Rules
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-text-muted">No entry profiles available</p>
+              )}
+            </div>
+
+            <div className="border-t border-surface-border/50 pt-3">
+              <p className="text-sm font-medium text-text-primary mb-2">Position Guidance Strategy</p>
+              {positionProfiles && positionProfiles.length > 0 ? (
+                <div className="space-y-2">
+                  {positionProfiles.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-surface-hover">
+                      <div>
+                        <span className="text-sm font-medium text-text-primary">{p.name}</span>
+                        {p.is_default && (
+                          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-accent-blue/15 text-accent-blue font-medium">
+                            Default
+                          </span>
+                        )}
+                        <p className="text-xs text-text-muted mt-0.5">v{p.version}</p>
+                      </div>
+                      <button
+                        onClick={() => setRulesProfile(p)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-surface border border-surface-border
+                                   text-text-muted text-xs font-medium hover:text-text-primary transition-colors"
+                      >
+                        <BookOpen size={12} />
+                        View Rules
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-text-muted">No position guidance profiles available</p>
+              )}
+            </div>
+          </div>
         </GlassyCard>
 
         <GlassyCard title="Risk Limits">
@@ -497,6 +581,10 @@ export default function SettingsPage() {
           )}
         </GlassyCard>
       </div>
+
+      {rulesProfile && (
+        <StrategyRulesModal profile={rulesProfile} onClose={() => setRulesProfile(null)} />
+      )}
     </div>
   );
 }

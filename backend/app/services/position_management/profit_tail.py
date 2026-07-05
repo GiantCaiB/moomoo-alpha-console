@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.position_lifecycle_state import PositionLifecycleState
 from app.models.position_management_signal import PositionManagementSignal
+import json
 from app.services.broker.base import BrokerAdapter
 from app.services.kline.service import KLineService
 from app.services.market_data.price_resolver import PriceResolver
@@ -47,19 +48,79 @@ class ProfitTailSignalResult:
     trim_25_done: bool | None = None
     trim_50_done: bool | None = None
     trim_75_done: bool | None = None
+    strategy_profile_id: str | None = None
+    strategy_version: str | None = None
+    parameters_snapshot_json: str | None = None
 
 
-@dataclass(frozen=True)
+@dataclass
+class ProfitTailEvalState:
+    highest_price_since_entry: float
+    tail_mode: bool
+    original_cost_basis: float | None
+    tail_started_at: datetime | None
+    trim_25_done: bool
+    trim_50_done: bool
+    trim_75_done: bool
+
+
+@dataclass
 class PositionLifecycleSnapshot:
     state: PositionLifecycleState
+    eval_state: ProfitTailEvalState
     was_created: bool
 
 
 class ProfitTailStrategyService:
-    def __init__(self, broker: BrokerAdapter, kline_service: KLineService, price_resolver: PriceResolver) -> None:
+    def __init__(
+        self,
+        broker: BrokerAdapter,
+        kline_service: KLineService,
+        price_resolver: PriceResolver,
+        strategy_profile_id: str | None = None,
+        strategy_version: str | None = None,
+        parameters: dict | None = None,
+    ) -> None:
         self._broker = broker
         self._kline = kline_service
         self._price_resolver = price_resolver
+        self._strategy_profile_id = strategy_profile_id
+        self._strategy_version = strategy_version
+        self._parameters = parameters or {}
+
+    @property
+    def _trim_thresholds(self) -> list[dict]:
+        return self._parameters.get("trim_thresholds", [
+            {"gain_pct": 25, "trim_pct": 10},
+            {"gain_pct": 50, "trim_pct": 15},
+            {"gain_pct": 75, "trim_pct": 20},
+        ])
+
+    @property
+    def _tail_threshold_pct(self) -> float:
+        return float(self._parameters.get("tail_threshold_pct", 100))
+
+    @property
+    def _loss_defense(self) -> dict:
+        return self._parameters.get("loss_defense", {
+            "review_pct": -8,
+            "stop_adding_pct": -15,
+            "reduce_risk_pct": -20,
+            "exit_review_pct": -30,
+        })
+
+    @property
+    def _tail_exit(self) -> dict:
+        return self._parameters.get("tail_exit", {
+            "weekly_sma_trim": 20,
+            "weekly_sma_exit": 30,
+            "drawdown_exit_pct": 35,
+        })
+
+    def _make_parameters_snapshot(self) -> str | None:
+        if self._parameters:
+            return json.dumps(self._parameters)
+        return None
 
     async def run(self, session: AsyncSession) -> tuple[list[ProfitTailSignalResult], dict]:
         positions = await self._broker.get_positions()
@@ -69,12 +130,30 @@ class ProfitTailStrategyService:
         data_error_count = 0
 
         for position in active_positions:
-            snapshot = await self._load_or_create_state(session, position.symbol, position.quantity, position.avg_cost)
-            signal = await self._evaluate_position(session, position, snapshot.state)
-            results.append(signal)
-            if signal.signal == "DATA_ERROR":
+            try:
+                snapshot = await self._load_or_create_state(session, position.symbol, position.quantity, position.avg_cost)
+                signal = await self._evaluate_position(session, position, snapshot.eval_state)
+                results.append(signal)
+                if signal.signal == "DATA_ERROR":
+                    data_error_count += 1
+                snapshot.state.highest_price_since_entry = snapshot.eval_state.highest_price_since_entry
+                await self._persist_signal(session, signal, snapshot.state)
+            except Exception as exc:
+                logger.exception("Position guidance error for %s: %s", position.symbol, exc)
+                error_signal = self._data_error(
+                    symbol=position.symbol,
+                    avg_cost=position.avg_cost,
+                    quantity=int(position.quantity or 0),
+                    reason=f"Evaluation failed: {exc}",
+                    bar_source="yfinance_cached_daily_bars",
+                )
+                results.append(error_signal)
                 data_error_count += 1
-            await self._persist_signal(session, signal, snapshot.state)
+                try:
+                    res = await self._load_or_create_state(session, position.symbol, position.quantity, position.avg_cost)
+                    await self._persist_signal(session, error_signal, res.state)
+                except Exception as persist_exc:
+                    logger.warning("Could not persist DATA_ERROR signal for %s: %s", position.symbol, persist_exc)
 
         await session.commit()
         summary = {
@@ -86,7 +165,7 @@ class ProfitTailStrategyService:
         }
         return results, summary
 
-    async def list_signals(self, session: AsyncSession, include_history: bool = False) -> list[ProfitTailSignalResult]:
+    async def list_signals(self, session: AsyncSession, include_history: bool = False, active_symbols: set[str] | None = None) -> list[ProfitTailSignalResult]:
         query = select(PositionManagementSignal).order_by(PositionManagementSignal.generated_at.desc(), PositionManagementSignal.created_at.desc())
         result = await session.execute(query)
         rows = result.scalars().all()
@@ -99,6 +178,8 @@ class ProfitTailStrategyService:
                 seen.add(row.symbol)
                 filtered.append(row)
             rows = filtered
+        if active_symbols is not None:
+            rows = [row for row in rows if row.symbol in active_symbols]
         return [self._row_to_result(row) for row in rows]
 
     async def _load_or_create_state(self, session: AsyncSession, symbol: str, quantity: int, avg_cost: float) -> PositionLifecycleSnapshot:
@@ -123,9 +204,18 @@ class ProfitTailStrategyService:
             )
             session.add(state)
             was_created = True
-        return PositionLifecycleSnapshot(state=state, was_created=was_created)
+        eval_state = ProfitTailEvalState(
+            highest_price_since_entry=state.highest_price_since_entry,
+            tail_mode=state.tail_mode,
+            original_cost_basis=state.original_cost_basis,
+            tail_started_at=state.tail_started_at,
+            trim_25_done=state.trim_25_done,
+            trim_50_done=state.trim_50_done,
+            trim_75_done=state.trim_75_done,
+        )
+        return PositionLifecycleSnapshot(state=state, eval_state=eval_state, was_created=was_created)
 
-    async def _evaluate_position(self, session: AsyncSession, position, state: PositionLifecycleState) -> ProfitTailSignalResult:
+    async def _evaluate_position(self, session: AsyncSession, position, eval_state: ProfitTailEvalState) -> ProfitTailSignalResult:
         symbol = position.symbol
         quantity = int(position.quantity or 0)
         avg_cost = float(position.avg_cost) if position.avg_cost is not None else None
@@ -151,12 +241,12 @@ class ProfitTailStrategyService:
         if current_price is None or current_price <= 0:
             return self._data_error(symbol, avg_cost, quantity, price_resolution.error or "No current price available", kline_result.latest_cached_close, bar_source="yfinance_cached_daily_bars")
 
-        highest = float(state.highest_price_since_entry or 0.0)
+        highest = float(eval_state.highest_price_since_entry or 0.0)
         if highest <= 0:
             highest = current_price
         if current_price > highest:
             highest = current_price
-            state.highest_price_since_entry = highest
+            eval_state.highest_price_since_entry = highest
 
         gain_pct = ((current_price - avg_cost) / avg_cost) * 100.0
         drawdown_from_high = ((highest - current_price) / highest) * 100.0 if highest > 0 else None
@@ -166,40 +256,50 @@ class ProfitTailStrategyService:
         weekly_sma30 = self._sma(weekly_bars, 30)
         daily_sma200 = self._sma(daily_bars, 200)
 
+        ld = self._loss_defense
+        tail_exit = self._tail_exit
+        drawdown_exit_pct = float(tail_exit.get("drawdown_exit_pct", 35))
+        sma_trim = int(tail_exit.get("weekly_sma_trim", 20))
+        sma_exit = int(tail_exit.get("weekly_sma_exit", 30))
+
         signal = "HOLD"
         reason = "Gain below first trim threshold."
         suggested_action = "Hold position"
         suggested_quantity = None
         suggested_trim_pct = None
 
-        if drawdown_from_high is not None and drawdown_from_high >= 35:
+        if drawdown_from_high is not None and drawdown_from_high >= drawdown_exit_pct:
             signal = "EXIT_POSITION"
-            reason = "Position drawdown from high exceeded 35%; review exit manually."
+            reason = f"Position drawdown from high exceeded {drawdown_exit_pct:.0f}%; review exit manually."
             suggested_action = "Review exit manually"
             suggested_trim_pct = 100
             suggested_quantity = quantity
-        elif gain_pct <= -30 or (daily_sma200 is not None and current_price < daily_sma200 and gain_pct <= -30):
+        elif gain_pct <= float(ld.get("exit_review_pct", -30)) or (daily_sma200 is not None and current_price < daily_sma200 and gain_pct <= float(ld.get("exit_review_pct", -30))):
+            exit_pct = abs(ld.get("exit_review_pct", -30))
             signal = "EXIT_POSITION"
-            reason = "Position down more than 30%; major risk threshold breached. Review exit manually."
+            reason = f"Position down more than {exit_pct:.0f}%; major risk threshold breached. Review exit manually."
             suggested_action = "Review exit manually"
             suggested_trim_pct = 100
             suggested_quantity = quantity
-        elif gain_pct <= -20 or (daily_sma200 is not None and current_price < daily_sma200 and gain_pct <= -20):
+        elif gain_pct <= float(ld.get("reduce_risk_pct", -20)) or (daily_sma200 is not None and current_price < daily_sma200 and gain_pct <= float(ld.get("reduce_risk_pct", -20))):
+            reduce_pct = abs(ld.get("reduce_risk_pct", -20))
             signal = "REDUCE_RISK"
-            reason = "Position down more than 20%; consider reducing exposure manually."
+            reason = f"Position down more than {reduce_pct:.0f}%; consider reducing exposure manually."
             suggested_action = "Reduce exposure manually"
             suggested_trim_pct = 50
             suggested_quantity = max(1, quantity // 2)
-        elif gain_pct <= -15 or (daily_sma200 is not None and current_price < daily_sma200 and gain_pct <= -15):
+        elif gain_pct <= float(ld.get("stop_adding_pct", -15)) or (daily_sma200 is not None and current_price < daily_sma200 and gain_pct <= float(ld.get("stop_adding_pct", -15))):
+            stop_pct = abs(ld.get("stop_adding_pct", -15))
             signal = "STOP_ADDING"
-            reason = "Position down more than 15%; do not add until thesis and trend improve."
+            reason = f"Position down more than {stop_pct:.0f}%; do not add until thesis and trend improve."
             suggested_action = "Do not add until thesis and trend improve"
-        elif gain_pct <= -8:
+        elif gain_pct <= float(ld.get("review_pct", -8)):
+            review_pct = abs(ld.get("review_pct", -8))
             signal = "REVIEW_POSITION"
-            reason = "Position down more than 8%; review thesis and risk."
+            reason = f"Position down more than {review_pct:.0f}%; review thesis and risk."
             suggested_action = "Review thesis and risk manually"
-        elif state.tail_mode and gain_pct >= 0:
-            if drawdown_from_high is not None and drawdown_from_high >= 35:
+        elif eval_state.tail_mode and gain_pct >= 0:
+            if drawdown_from_high is not None and drawdown_from_high >= drawdown_exit_pct:
                 signal = "EXIT_TAIL"
                 reason = "Tail trend broken or drawdown exceeded limit."
                 suggested_action = "Exit tail manually"
@@ -222,31 +322,33 @@ class ProfitTailStrategyService:
                 reason = "Tail position remains above weekly SMA20."
                 suggested_action = "Hold tail position"
         else:
-            if gain_pct >= 100:
+            tail_threshold = self._tail_threshold_pct
+            if gain_pct >= tail_threshold:
                 signal = "ENTER_TAIL_MODE"
-                reason = "Position is up 100%+. Consider recovering original cost basis and keeping remaining shares as a profit tail."
+                reason = f"Position is up {tail_threshold:.0f}%+. Consider recovering original cost basis and keeping remaining shares as a profit tail."
                 suggested_action = "Recover cost basis and keep remaining shares as profit tail"
-                shares_to_recover_cost = (state.original_cost_basis or (avg_cost * quantity)) / current_price if current_price > 0 else quantity * 0.5
+                shares_to_recover_cost = (eval_state.original_cost_basis or (avg_cost * quantity)) / current_price if current_price > 0 else quantity * 0.5
                 candidate = min(quantity * 0.5, shares_to_recover_cost)
                 suggested_quantity = max(1, int(candidate)) if candidate and candidate > 0 else max(1, int(quantity * 0.5))
-            elif gain_pct >= 75 and not state.trim_75_done:
-                signal = "TRIM_PROFIT"
-                reason = "Position is up 75%+, third trim level not completed."
-                suggested_action = "Trim 20% of position"
-                suggested_trim_pct = 20
-                suggested_quantity = max(1, int(quantity * 0.2))
-            elif gain_pct >= 50 and not state.trim_50_done:
-                signal = "TRIM_PROFIT"
-                reason = "Position is up 50%+, second trim level not completed."
-                suggested_action = "Trim 15% of position"
-                suggested_trim_pct = 15
-                suggested_quantity = max(1, int(quantity * 0.15))
-            elif gain_pct >= 25 and not state.trim_25_done:
-                signal = "TRIM_PROFIT"
-                reason = "Position is up 25%+, first trim level not completed."
-                suggested_action = "Trim 10% of position"
-                suggested_trim_pct = 10
-                suggested_quantity = max(1, int(quantity * 0.10))
+            else:
+                trim_found = False
+                for trim_def in sorted(self._trim_thresholds, key=lambda t: t["gain_pct"], reverse=True):
+                    tg = float(trim_def["gain_pct"])
+                    tp = float(trim_def["trim_pct"])
+                    trim_flag = f"trim_{int(tg)}_done"
+                    trim_attr = getattr(eval_state, trim_flag, None)
+                    if gain_pct >= tg and not trim_attr:
+                        signal = "TRIM_PROFIT"
+                        reason = f"Position is up {tg:.0f}%+, trim level not completed."
+                        suggested_action = f"Trim {tp:.0f}% of position"
+                        suggested_trim_pct = tp
+                        suggested_quantity = max(1, int(quantity * (tp / 100.0)))
+                        trim_found = True
+                        break
+                if not trim_found:
+                    signal = "HOLD"
+                    reason = "Gain below first trim threshold."
+                    suggested_action = "Hold position"
 
         return ProfitTailSignalResult(
             symbol=symbol,
@@ -259,7 +361,7 @@ class ProfitTailStrategyService:
             suggested_action=suggested_action,
             suggested_quantity=suggested_quantity,
             suggested_trim_pct=suggested_trim_pct,
-            tail_mode=bool(state.tail_mode),
+            tail_mode=bool(eval_state.tail_mode),
             weekly_close=round(weekly_close, 4),
             weekly_sma20=round(weekly_sma20, 4) if weekly_sma20 is not None else None,
             weekly_sma30=round(weekly_sma30, 4) if weekly_sma30 is not None else None,
@@ -269,12 +371,15 @@ class ProfitTailStrategyService:
             bar_source="yfinance_cached_daily_bars",
             is_real_market_data=True,
             generated_at=datetime.now(timezone.utc),
-            original_cost_basis=state.original_cost_basis,
-            highest_price_since_entry=state.highest_price_since_entry,
-            tail_started_at=state.tail_started_at,
-            trim_25_done=state.trim_25_done,
-            trim_50_done=state.trim_50_done,
-            trim_75_done=state.trim_75_done,
+            original_cost_basis=eval_state.original_cost_basis,
+            highest_price_since_entry=eval_state.highest_price_since_entry,
+            tail_started_at=eval_state.tail_started_at,
+            trim_25_done=eval_state.trim_25_done,
+            trim_50_done=eval_state.trim_50_done,
+            trim_75_done=eval_state.trim_75_done,
+            strategy_profile_id=self._strategy_profile_id,
+            strategy_version=self._strategy_version,
+            parameters_snapshot_json=self._make_parameters_snapshot(),
         )
 
     async def _persist_signal(self, session: AsyncSession, signal: ProfitTailSignalResult, state: PositionLifecycleState) -> None:
@@ -302,6 +407,9 @@ class ProfitTailStrategyService:
                 bar_source=signal.bar_source,
                 is_real_market_data=signal.is_real_market_data,
                 generated_at=signal.generated_at,
+                strategy_profile_id=signal.strategy_profile_id,
+                strategy_version=signal.strategy_version,
+                parameters_snapshot_json=signal.parameters_snapshot_json,
             )
         )
         if signal.current_price is not None and signal.current_price > (state.highest_price_since_entry or 0):
@@ -338,6 +446,9 @@ class ProfitTailStrategyService:
             bar_source=bar_source or "yfinance_cached_daily_bars",
             is_real_market_data=True,
             generated_at=datetime.now(timezone.utc),
+            strategy_profile_id=self._strategy_profile_id,
+            strategy_version=self._strategy_version,
+            parameters_snapshot_json=self._make_parameters_snapshot(),
         )
 
     @staticmethod
@@ -417,4 +528,7 @@ class ProfitTailStrategyService:
             trim_25_done=None,
             trim_50_done=None,
             trim_75_done=None,
+            strategy_profile_id=row.strategy_profile_id,
+            strategy_version=row.strategy_version,
+            parameters_snapshot_json=row.parameters_snapshot_json,
         )

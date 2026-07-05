@@ -122,3 +122,47 @@ async def test_get_status_returns_metrics():
     assert status["provider"] is not None
     assert status["requests"] == 1
     assert "per_symbol" in status
+
+
+@pytest.mark.asyncio
+async def test_cache_write_includes_source(api_app):
+    """_write_cache inserts source='yfinance' and does not violate NOT NULL."""
+    from sqlalchemy import text as sql_text
+    from app.db.session import create_session_factory
+
+    provider = FakeProvider()
+    service = KLineService(provider=provider, enable_cache=True)
+
+    factory = create_session_factory()
+    async with factory() as session:
+        df = await service.get_daily_bars("AAPL", lookback_days=10, session=session)
+        assert not df.empty
+
+        result = await session.execute(
+            sql_text("SELECT source FROM bars_1d WHERE source = :source LIMIT 1"),
+            {"source": "yfinance"},
+        )
+        row = result.mappings().first()
+        assert row is not None, "No cached bar with source='yfinance' found"
+
+
+@pytest.mark.asyncio
+async def test_cache_write_does_not_violate_not_null(api_app):
+    """_write_cache does not raise NOT NULL constraint error on bars_1d.source."""
+    from sqlalchemy import text as sql_text
+    from app.db.session import create_session_factory
+
+    provider = FakeProvider()
+    service = KLineService(provider=provider, enable_cache=True)
+
+    factory = create_session_factory()
+    async with factory() as session:
+        df = await service.get_daily_bars("MSFT", lookback_days=5, session=session)
+        assert not df.empty
+
+        result = await session.execute(
+            sql_text("SELECT COUNT(*) AS cnt FROM bars_1d WHERE source = :source"),
+            {"source": "yfinance"},
+        )
+        row = result.mappings().first()
+        assert row is not None and row["cnt"] > 0, "No cached bars with source='yfinance'"

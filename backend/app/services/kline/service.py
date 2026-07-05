@@ -373,80 +373,93 @@ class KLineService:
             has_updated_at = "updated_at" in columns
             has_created_at = "created_at" in columns
             has_id = "id" in columns
-            for _, row in df.iterrows():
-                bar_date = row["date"]
-                if hasattr(bar_date, "to_pydatetime"):
-                    bar_date = bar_date.to_pydatetime().date()
-                elif hasattr(bar_date, "date"):
-                    bar_date = bar_date.date()
-                elif isinstance(bar_date, str):
-                    bar_date = date.fromisoformat(bar_date[:10])
-                now = datetime.now(timezone.utc)
-                existing_stmt = text(
-                    "SELECT id FROM bars_1d WHERE symbol = :symbol AND bar_date = :bar_date LIMIT 1"
-                )
-                existing_result = await session.execute(existing_stmt, {"symbol": symbol, "bar_date": bar_date})
-                existing_row = existing_result.mappings().first()
-                values = {
-                    "symbol": symbol,
-                    "bar_date": bar_date,
-                    "open": float(row["open"]),
-                    "high": float(row["high"]),
-                    "low": float(row["low"]),
-                    "close": float(row["close"]),
-                    "volume": float(row["volume"]),
-                }
-                if has_adj_close:
-                    values["adj_close"] = float(row["adj_close"])
-                if has_fetched_at:
-                    values["fetched_at"] = now
-                if has_updated_at:
-                    values["updated_at"] = now
-                if has_created_at:
-                    values["created_at"] = now
-                if has_id:
-                    values["id"] = str(uuid4())
-
-                if existing_row:
-                    set_clauses = ["open = :open", "high = :high", "low = :low", "close = :close", "volume = :volume"]
-                    if has_adj_close:
-                        set_clauses.append("adj_close = :adj_close")
-                    if has_fetched_at:
-                        set_clauses.append("fetched_at = :fetched_at")
-                    if has_updated_at:
-                        set_clauses.append("updated_at = :updated_at")
-                    if has_created_at:
-                        set_clauses.append("created_at = COALESCE(created_at, :created_at)")
-                    update_stmt = text(
-                        f"UPDATE bars_1d SET {', '.join(set_clauses)} WHERE symbol = :symbol AND bar_date = :bar_date"
+            has_source = "source" in columns
+            async with session.begin_nested():
+                for _, row in df.iterrows():
+                    bar_date = row["date"]
+                    if hasattr(bar_date, "to_pydatetime"):
+                        bar_date = bar_date.to_pydatetime().date()
+                    elif hasattr(bar_date, "date"):
+                        bar_date = bar_date.date()
+                    elif isinstance(bar_date, str):
+                        bar_date = date.fromisoformat(bar_date[:10])
+                    now = datetime.now(timezone.utc)
+                    existing_stmt = text(
+                        "SELECT id FROM bars_1d WHERE symbol = :symbol AND bar_date = :bar_date LIMIT 1"
                     )
-                    await session.execute(update_stmt, values)
-                else:
-                    insert_columns = ["symbol", "bar_date", "open", "high", "low", "close", "volume"]
-                    insert_values = [":symbol", ":bar_date", ":open", ":high", ":low", ":close", ":volume"]
+                    existing_result = await session.execute(existing_stmt, {"symbol": symbol, "bar_date": bar_date})
+                    existing_row = existing_result.mappings().first()
+                    values = {
+                        "symbol": symbol,
+                        "bar_date": bar_date,
+                        "open": float(row["open"]),
+                        "high": float(row["high"]),
+                        "low": float(row["low"]),
+                        "close": float(row["close"]),
+                        "volume": float(row["volume"]),
+                    }
                     if has_adj_close:
-                        insert_columns.append("adj_close")
-                        insert_values.append(":adj_close")
+                        values["adj_close"] = float(row["adj_close"])
                     if has_fetched_at:
-                        insert_columns.append("fetched_at")
-                        insert_values.append(":fetched_at")
+                        values["fetched_at"] = now
                     if has_updated_at:
-                        insert_columns.append("updated_at")
-                        insert_values.append(":updated_at")
+                        values["updated_at"] = now
                     if has_created_at:
-                        insert_columns.append("created_at")
-                        insert_values.append(":created_at")
+                        values["created_at"] = now
                     if has_id:
-                        insert_columns.append("id")
-                        insert_values.append(":id")
-                    insert_stmt = text(
-                        f"INSERT INTO bars_1d ({', '.join(insert_columns)}) VALUES ({', '.join(insert_values)})"
-                    )
-                    await session.execute(insert_stmt, values)
-            await session.commit()
+                        values["id"] = str(uuid4())
+                    if has_source:
+                        values["source"] = "yfinance"
+
+                    if existing_row:
+                        set_clauses = ["open = :open", "high = :high", "low = :low", "close = :close", "volume = :volume"]
+                        if has_adj_close:
+                            set_clauses.append("adj_close = :adj_close")
+                        if has_fetched_at:
+                            set_clauses.append("fetched_at = :fetched_at")
+                        if has_updated_at:
+                            set_clauses.append("updated_at = :updated_at")
+                        if has_created_at:
+                            set_clauses.append("created_at = COALESCE(created_at, :created_at)")
+                        if has_source:
+                            set_clauses.append("source = :source")
+                        update_stmt = text(
+                            f"UPDATE bars_1d SET {', '.join(set_clauses)} WHERE symbol = :symbol AND bar_date = :bar_date"
+                        )
+                        await session.execute(update_stmt, values)
+                    else:
+                        insert_columns = ["symbol", "bar_date", "open", "high", "low", "close", "volume"]
+                        insert_values = [":symbol", ":bar_date", ":open", ":high", ":low", ":close", ":volume"]
+                        if has_adj_close:
+                            insert_columns.append("adj_close")
+                            insert_values.append(":adj_close")
+                        if has_fetched_at:
+                            insert_columns.append("fetched_at")
+                            insert_values.append(":fetched_at")
+                        if has_updated_at:
+                            insert_columns.append("updated_at")
+                            insert_values.append(":updated_at")
+                        if has_created_at:
+                            insert_columns.append("created_at")
+                            insert_values.append(":created_at")
+                        if has_id:
+                            insert_columns.append("id")
+                            insert_values.append(":id")
+                        if has_source:
+                            insert_columns.append("source")
+                            insert_values.append(":source")
+                        insert_stmt = text(
+                            f"INSERT INTO bars_1d ({', '.join(insert_columns)}) VALUES ({', '.join(insert_values)})"
+                        )
+                        await session.execute(insert_stmt, values)
         except Exception as e:
-            logger.warning("Cache write failed for %s: %s", symbol, e)
-            await session.rollback()
+            bar_count = len(df) if df is not None else 0
+            first_date = str(df["date"].iloc[0]) if df is not None and not df.empty and "date" in df.columns else None
+            last_date = str(df["date"].iloc[-1]) if df is not None and not df.empty and "date" in df.columns else None
+            logger.error(
+                "Cache write failed | stage=kline_cache_write symbol=%s provider=%s bar_count=%s first_date=%s last_date=%s error=%s",
+                symbol, self._provider.__class__.__name__, bar_count, first_date, last_date, e,
+            )
 
     def _track(self, symbol: str, bars: int, source: str, last_error: str | None = None) -> None:
         self._per_symbol[symbol] = {

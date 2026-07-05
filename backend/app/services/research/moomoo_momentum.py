@@ -152,10 +152,72 @@ class MoomooMomentumResearchProvider:
         price_resolver: PriceResolver,
         kline_service: KLineService,
         signal_data_source: str,
+        strategy_profile_id: str | None = None,
+        strategy_version: str | None = None,
+        parameters: dict | None = None,
     ) -> None:
         self._price_resolver = price_resolver
         self._kline = kline_service
         self._signal_data_source = signal_data_source
+        self._strategy_profile_id = strategy_profile_id
+        self._strategy_version = strategy_version
+        self._parameters = parameters or {}
+
+    @property
+    def _buy_threshold(self) -> float:
+        return float(self._parameters.get("buy_score_threshold", 75))
+
+    @property
+    def _watch_threshold(self) -> float:
+        return float(self._parameters.get("watch_score_threshold", 65))
+
+    @property
+    def _min_bars(self) -> int:
+        return int(self._parameters.get("min_bars", 220))
+
+    def _build_signal_dto(self, symbol: str, verdict: str, total_score: float,
+                          scores: list[dict], reason: str,
+                          entry_min: float | None, entry_max: float | None,
+                          stop_level: float | None,
+                          target_size_pct: float | None,
+                          risk_amount: float | None,
+                          current_price: float | None,
+                          universe: list[str],
+                          price_source: str,
+                          failed_filters: list[str] | None,
+                          data_quality_status: str,
+                          calculated_score_before_filters: float | None,
+                          invalidation: str | None = None,
+                          is_tradeable: bool = False) -> SignalDto:
+        return SignalDto(
+            symbol=symbol,
+            verdict=verdict,
+            total_score=round(total_score, 1),
+            scores=scores,
+            reason=reason,
+            entry_min=entry_min,
+            entry_max=entry_max,
+            stop_level=stop_level,
+            target_size_pct=target_size_pct,
+            risk_amount=risk_amount,
+            invalidation=invalidation,
+            current_price=current_price,
+            strategy_name="momentum_relative_strength",
+            data_source=self._signal_data_source,
+            generated_at=datetime.now(timezone.utc),
+            universe=list(universe),
+            price_source=price_source,
+            bar_source="yfinance_cached_daily_bars",
+            is_real_market_data=True,
+            is_tradeable=is_tradeable,
+            has_error=False,
+            failed_filters=failed_filters,
+            data_quality_status=data_quality_status,
+            calculated_score_before_filters=calculated_score_before_filters,
+            strategy_profile_id=self._strategy_profile_id,
+            strategy_version=self._strategy_version,
+            parameters_snapshot=self._parameters,
+        )
 
     async def screen_candidates(self, request: ScreenRequest, session: AsyncSession | None = None) -> list[SignalDto]:
         results: list[SignalDto] = []
@@ -205,10 +267,11 @@ class MoomooMomentumResearchProvider:
                 quality = "PROVIDER_ERROR" if kline_result.fetch_failed else "INSUFFICIENT_HISTORY"
             return self._error_signal(symbol, message, quality, universe)
 
-        if len(bars) < 200:
+        min_bars = self._min_bars
+        if len(bars) < min_bars:
             return self._error_signal(
                 symbol,
-                f"Insufficient history: {len(bars)} bars (< 200 required)",
+                f"Insufficient history: {len(bars)} bars (< {min_bars} required)",
                 "INSUFFICIENT_HISTORY",
                 universe,
             )
@@ -250,13 +313,16 @@ class MoomooMomentumResearchProvider:
             failed_filters.append("price_too_far_above_sma20")
             hard_reasons.append(f"Price {((close / sma20 - 1) * 100):.1f}% above 20 SMA (> 15% max)")
 
+        buy_threshold = self._buy_threshold
+        watch_threshold = self._watch_threshold
+
         if failed_filters:
             verdict = "AVOID"
             reason = "; ".join(hard_reasons)
-        elif total >= 75:
+        elif total >= buy_threshold:
             verdict = "BUY_STARTER"
             reason = f"Score: {total:.1f}/100"
-        elif total >= 65:
+        elif total >= watch_threshold:
             verdict = "WATCH"
             reason = f"Score: {total:.1f}/100 — borderline, monitor for improvement"
         else:
@@ -266,10 +332,10 @@ class MoomooMomentumResearchProvider:
 
         stop = self._compute_stop(close, sma20, bars)
 
-        return SignalDto(
+        return self._build_signal_dto(
             symbol=symbol,
             verdict=verdict,
-            total_score=round(total, 1),
+            total_score=total,
             scores=scores,
             reason=reason,
             entry_min=round(close * 0.98, 2),
@@ -277,20 +343,13 @@ class MoomooMomentumResearchProvider:
             stop_level=stop,
             target_size_pct=2.0 if verdict == "BUY_STARTER" else None,
             risk_amount=round((close - stop) * 100, 2),
-            invalidation=f"Close below ${stop:.2f} or 20d return < SPY" if verdict != "DATA_ERROR" else None,
             current_price=close,
-            strategy_name="momentum_relative_strength",
-            data_source=self._signal_data_source,
-            generated_at=datetime.now(timezone.utc),
-            universe=list(universe),
+            universe=universe,
             price_source=price_resolution.price_source,
-            bar_source="yfinance_cached_daily_bars",
-            is_real_market_data=True,
-            is_tradeable=False,
-            has_error=False,
             failed_filters=failed_filters if failed_filters else None,
             data_quality_status="OK",
             calculated_score_before_filters=round(total, 1),
+            invalidation=f"Close below ${stop:.2f} or 20d return < SPY" if verdict != "DATA_ERROR" else None,
         )
 
     def _error_from_resolution(
@@ -320,6 +379,9 @@ class MoomooMomentumResearchProvider:
             failed_filters=None,
             data_quality_status=quality,
             calculated_score_before_filters=None,
+            strategy_profile_id=self._strategy_profile_id,
+            strategy_version=self._strategy_version,
+            parameters_snapshot=self._parameters,
         )
 
     def _error_signal(self, symbol: str, error: str, quality: str, universe: list[str]) -> SignalDto:
@@ -343,6 +405,9 @@ class MoomooMomentumResearchProvider:
             failed_filters=None,
             data_quality_status=quality,
             calculated_score_before_filters=None,
+            strategy_profile_id=self._strategy_profile_id,
+            strategy_version=self._strategy_version,
+            parameters_snapshot=self._parameters,
         )
 
     async def analyze_symbol(self, symbol: str, session: AsyncSession | None = None) -> ResearchReport:

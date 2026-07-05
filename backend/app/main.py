@@ -10,7 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.logging import setup_logging
-from app.db.session import init_db, close_engine
+from app.db.session import init_db, close_engine, create_session_factory
+from app.db.seed import seed_strategy_profiles
 from app.services.broker.mock import MockBrokerAdapter
 from app.services.broker.paper import PaperBrokerAdapter
 from app.services.broker.moomoo import MoomooBrokerAdapter
@@ -44,6 +45,7 @@ from app.api import (
     runtime_router,
     diagnostics_router,
     market_data_router,
+    strategy_profiles_router,
     ws_router,
 )
 from app.workers.scheduler import setup_scheduler, start_scheduler, stop_scheduler
@@ -67,6 +69,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Moomoo Alpha Console (broker_mode=%s)", settings.broker_mode)
 
     await init_db()
+
+    factory = create_session_factory()
+    async with factory() as session:
+        await seed_strategy_profiles(session)
 
     broker = create_broker()
     await broker.connect()
@@ -144,4 +150,5 @@ app.include_router(settings_router)
 app.include_router(runtime_router)
 app.include_router(diagnostics_router)
 app.include_router(market_data_router)
+app.include_router(strategy_profiles_router)
 app.include_router(ws_router)

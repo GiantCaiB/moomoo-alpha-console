@@ -13,6 +13,7 @@ from app.models.strategy_run import StrategyRun
 from app.services.research.base import ScreenRequest
 from app.services.research.moomoo_momentum import MoomooMomentumResearchProvider
 from app.services.kline.symbol_map import normalize_symbol
+from app.services.strategy_registry import StrategyRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,17 @@ def _sanitize_universe(universe: list[str]) -> list[str]:
     return cleaned
 
 
-async def run_momentum_screener(session: AsyncSession) -> StrategyRun:
+async def run_momentum_screener(
+    session: AsyncSession,
+    strategy_profile_id: str | None = None,
+    strategy_version: str | None = None,
+    parameters: dict | None = None,
+) -> StrategyRun:
     runtime_state_service = get_runtime_state()
     runtime_state = await runtime_state_service.build(session)
+
+    reg_defn = StrategyRegistry.get("entry", "momentum_relative_strength") if strategy_profile_id else None
+    merged_params = parameters or (reg_defn.default_parameters if reg_defn else {})
 
     strategy_run = StrategyRun(
         strategy_name="momentum_relative_strength",
@@ -88,6 +97,9 @@ async def run_momentum_screener(session: AsyncSession) -> StrategyRun:
                 price_resolver=get_price_resolver(),
                 kline_service=get_kline_service(),
                 signal_data_source=runtime_state.signal_data_source,
+                strategy_profile_id=strategy_profile_id,
+                strategy_version=strategy_version,
+                parameters=merged_params,
             )
         request = ScreenRequest(
             universe=sanitized_universe,
@@ -104,6 +116,10 @@ async def run_momentum_screener(session: AsyncSession) -> StrategyRun:
             if sig_dto.verdict == "DATA_ERROR":
                 error_count += 1
                 strategy_run.error = (strategy_run.error or "") + f"{sig_dto.symbol}: {sig_dto.reason}; "
+
+            parameters_snapshot = None
+            if sig_dto.parameters_snapshot:
+                parameters_snapshot = json.dumps(sig_dto.parameters_snapshot)
 
             signal = Signal(
                 strategy_run_id=strategy_run.id,
@@ -131,6 +147,9 @@ async def run_momentum_screener(session: AsyncSession) -> StrategyRun:
                 failed_filters=json.dumps(sig_dto.failed_filters) if sig_dto.failed_filters else None,
                 data_quality_status=sig_dto.data_quality_status,
                 calculated_score_before_filters=sig_dto.calculated_score_before_filters,
+                strategy_profile_id=sig_dto.strategy_profile_id,
+                strategy_version=sig_dto.strategy_version,
+                parameters_snapshot_json=parameters_snapshot,
             )
             session.add(signal)
             await session.flush()

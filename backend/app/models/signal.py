@@ -39,3 +39,9 @@ class Signal(Base, UUIDMixin, TimestampMixin):
     failed_filters: Mapped[str | None] = mapped_column(Text, nullable=True)
     data_quality_status: Mapped[str] = mapped_column(String(30), default="OK")
     calculated_score_before_filters: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    strategy_profile_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("strategy_profiles.id"), nullable=True
+    )
+    strategy_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    parameters_snapshot_json: Mapped[str | None] = mapped_column(Text, nullable=True)

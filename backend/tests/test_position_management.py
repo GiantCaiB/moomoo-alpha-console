@@ -703,3 +703,495 @@ async def test_position_signals_no_orders_on_new_signals(position_signals_client
     assert resp.status_code == 200
     assert api_broker.place_limit_order_calls == 0
     assert api_broker.cancel_order_calls == 0
+
+
+@pytest.mark.asyncio
+async def test_position_signals_continues_after_cache_write_failure(api_broker, monkeypatch):
+    """Cache write failure for one symbol does not crash the batch or poison lifecycle state.
+
+    Tests:
+    - Multi-symbol continuation across KLine cache write failure
+    - No MissingGreenlet when accessing lifecycle state after K-line operations
+    - One signal per active position
+    """
+    from app.services.kline.service import KLineService
+    from app.services.position_management.profit_tail import ProfitTailStrategyService
+    from app.services.market_data.price_resolver import PriceResolver
+    from app.db.session import create_session_factory
+    from sqlalchemy import delete as sa_delete
+    from app.models.bar_1d import Bar1d
+
+    await init_db()
+
+    # Clear any cached bars that might interfere with this test
+    factory = create_session_factory()
+    async with factory() as s:
+        await s.execute(sa_delete(Bar1d))
+        await s.commit()
+
+    fail_symbol_ksym = "FAILSYM"
+    ok_symbol_ksym = "OKSYM"
+    # Close prices corresponding to ~5% gain and ~75% gain (avg_cost=100)
+    close_prices = {fail_symbol_ksym: 105.0, ok_symbol_ksym: 175.0}
+    positions = [
+        PositionDto(symbol="FAILSYM", quantity=100, avg_cost=100.0, current_price=None,
+                    unrealized_pnl=None, day_pnl=None, stop_level=None, position_pct=5.0),
+        PositionDto(symbol="OKSYM", quantity=100, avg_cost=100.0, current_price=None,
+                    unrealized_pnl=None, day_pnl=None, stop_level=None, position_pct=5.0),
+    ]
+
+    class FakeProvider:
+        def get_daily_bars(self, symbol, start_date, end_date, adjusted=True):
+            base = close_prices.get(symbol, 102.0)
+            dates = []
+            current = start_date
+            from datetime import timedelta
+            while current <= end_date:
+                dates.append(current)
+                current += timedelta(days=1)
+            closes = [(base + float(i) * 0.01) for i in range(400)]
+            return pd.DataFrame({
+                "date": dates[:400],
+                "open": [c * 0.99 for c in closes],
+                "high": [c * 1.01 for c in closes],
+                "low": [c * 0.98 for c in closes],
+                "close": closes,
+                "volume": [1_000_000] * min(len(dates), 400),
+                "adj_close": closes,
+            })
+
+    async def get_positions():
+        return positions
+
+    monkeypatch.setattr(api_broker, "get_positions", get_positions)
+
+    async def null_quote(symbol):
+        from app.services.broker.base import QuoteDto
+        return QuoteDto(symbol=symbol, bid=None, ask=None, last=None, volume=None,
+                        bid_size=None, ask_size=None, timestamp=datetime.now(timezone.utc))
+    monkeypatch.setattr(api_broker, "get_quote", null_quote)
+
+    provider = FakeProvider()
+    kline = KLineService(provider=provider, enable_cache=True)
+
+    original_write_cache = kline._write_cache
+
+    async def failing_write_cache(symbol, df, session):
+        if fail_symbol_ksym in symbol.upper():
+            raise Exception(f"Simulated cache write failure for {symbol}")
+        await original_write_cache(symbol, df, session)
+
+    monkeypatch.setattr(kline, "_write_cache", failing_write_cache)
+
+    resolver = PriceResolver(api_broker, kline)
+    service = ProfitTailStrategyService(broker=api_broker, kline_service=kline, price_resolver=resolver)
+
+    async with factory() as session:
+        results, summary = await service.run(session)
+
+        assert summary["status"] == "COMPLETED", f"Run failed: {summary}"
+        assert summary["positions_scanned"] == 2
+        assert summary["signals_generated"] == 2
+        assert summary["data_error_count"] == 1
+
+        symbols = {r.symbol for r in results}
+        assert symbols == {"FAILSYM", "OKSYM"}, f"Expected FAILSYM and OKSYM, got {symbols}"
+
+        meta = next(r for r in results if r.symbol == "FAILSYM")
+        assert meta.signal == "DATA_ERROR", f"Expected DATA_ERROR for FAILSYM, got {meta.signal}"
+        assert "Simulated cache write failure" in (meta.reason or "")
+
+        ok = next(r for r in results if r.symbol == "OKSYM")
+        assert ok.signal == "TRIM_PROFIT", f"Expected TRIM_PROFIT for OKSYM, got {ok.signal}"
+
+
+@pytest.mark.asyncio
+async def test_one_latest_signal_per_position(api_broker, monkeypatch):
+    """Run produces exactly one latest signal per active position (no duplicates)."""
+    from app.services.kline.service import KLineService
+    from app.services.position_management.profit_tail import ProfitTailStrategyService
+    from app.services.market_data.price_resolver import PriceResolver
+    from app.db.session import create_session_factory
+    from sqlalchemy import delete as sa_delete
+    from app.models.bar_1d import Bar1d
+
+    await init_db()
+
+    factory = create_session_factory()
+    async with factory() as s:
+        await s.execute(sa_delete(Bar1d))
+        await s.commit()
+
+    syms = ["SYMA", "SYMB", "SYMC"]
+    positions = [
+        PositionDto(symbol=s, quantity=100, avg_cost=100.0, current_price=None,
+                    unrealized_pnl=None, day_pnl=None, stop_level=None, position_pct=5.0)
+        for s in syms
+    ]
+
+    class FakeProvider:
+        def get_daily_bars(self, symbol, start_date, end_date, adjusted=True):
+            close = 102.0
+            dates = []
+            current = start_date
+            from datetime import timedelta
+            while current <= end_date:
+                dates.append(current)
+                current += timedelta(days=1)
+            closes = [(close + float(i) * 0.01) for i in range(400)]
+            return pd.DataFrame({
+                "date": dates[:400],
+                "open": [c * 0.99 for c in closes],
+                "high": [c * 1.01 for c in closes],
+                "low": [c * 0.98 for c in closes],
+                "close": closes,
+                "volume": [1_000_000] * min(len(dates), 400),
+                "adj_close": closes,
+            })
+
+    async def get_positions():
+        return positions
+
+    monkeypatch.setattr(api_broker, "get_positions", get_positions)
+
+    async def null_quote(symbol):
+        from app.services.broker.base import QuoteDto
+        return QuoteDto(symbol=symbol, bid=None, ask=None, last=None, volume=None,
+                        bid_size=None, ask_size=None, timestamp=datetime.now(timezone.utc))
+    monkeypatch.setattr(api_broker, "get_quote", null_quote)
+
+    kline = KLineService(provider=FakeProvider(), enable_cache=True)
+    resolver = PriceResolver(api_broker, kline)
+    service = ProfitTailStrategyService(broker=api_broker, kline_service=kline, price_resolver=resolver)
+
+    async with factory() as session:
+        results, summary = await service.run(session)
+
+        assert summary["status"] == "COMPLETED"
+        assert summary["signals_generated"] == 3
+
+        symbols = [r.symbol for r in results]
+        assert len(symbols) == len(set(symbols)), f"Duplicate symbols in results: {symbols}"
+        assert set(symbols) == set(syms)
+
+
+@pytest.mark.asyncio
+async def test_no_missing_greenlet_on_cache_write_failure(api_broker, monkeypatch):
+    """No MissingGreenlet when accessing lifecycle state after KLine cache write failure.
+
+    Tests that ProfitTailEvalState prevents lazy-load on expired ORM state.
+    """
+    from app.services.kline.service import KLineService
+    from app.services.position_management.profit_tail import ProfitTailStrategyService
+    from app.services.market_data.price_resolver import PriceResolver
+    from app.db.session import create_session_factory
+    from sqlalchemy import delete as sa_delete
+    from app.models.bar_1d import Bar1d
+
+    await init_db()
+
+    factory = create_session_factory()
+    async with factory() as s:
+        await s.execute(sa_delete(Bar1d))
+        await s.commit()
+
+    position = PositionDto(symbol="ZXCV", quantity=100, avg_cost=100.0, current_price=None,
+                           unrealized_pnl=None, day_pnl=None, stop_level=None, position_pct=5.0)
+
+    class FakeProvider:
+        def get_daily_bars(self, symbol, start_date, end_date, adjusted=True):
+            close = 102.0
+            dates = []
+            current = start_date
+            from datetime import timedelta
+            while current <= end_date:
+                dates.append(current)
+                current += timedelta(days=1)
+            closes = [(close + float(i) * 0.01) for i in range(400)]
+            return pd.DataFrame({
+                "date": dates[:400],
+                "open": [c * 0.99 for c in closes],
+                "high": [c * 1.01 for c in closes],
+                "low": [c * 0.98 for c in closes],
+                "close": closes,
+                "volume": [1_000_000] * min(len(dates), 400),
+                "adj_close": closes,
+            })
+
+    async def get_positions():
+        return [position]
+
+    monkeypatch.setattr(api_broker, "get_positions", get_positions)
+
+    async def null_quote(symbol):
+        from app.services.broker.base import QuoteDto
+        return QuoteDto(symbol=symbol, bid=None, ask=None, last=None, volume=None,
+                        bid_size=None, ask_size=None, timestamp=datetime.now(timezone.utc))
+    monkeypatch.setattr(api_broker, "get_quote", null_quote)
+
+    kline = KLineService(provider=FakeProvider(), enable_cache=True)
+
+    async def fail_every_write(symbol, df, session):
+        raise Exception("Simulated cache write failure")
+
+    monkeypatch.setattr(kline, "_write_cache", fail_every_write)
+
+    resolver = PriceResolver(api_broker, kline)
+    service = ProfitTailStrategyService(broker=api_broker, kline_service=kline, price_resolver=resolver)
+
+    async with factory() as session:
+        # This must not raise MissingGreenlet error.
+        # ProfitTailEvalState prevents lazy-load on expired ORM state.
+        results, summary = await service.run(session)
+
+        assert summary["status"] == "COMPLETED"
+        assert summary["signals_generated"] == 1
+        assert summary["data_error_count"] == 1
+
+        result = results[0]
+        assert result.symbol == "ZXCV"
+        assert result.signal == "DATA_ERROR"
+        assert "Simulated cache write failure" in (result.reason or "")
+
+
+async def _insert_signal(session, symbol: str, signal: str = "HOLD", **kw):
+    """Helper to insert a position management signal row."""
+    from app.models.position_management_signal import PositionManagementSignal
+    session.add(PositionManagementSignal(
+        symbol=symbol,
+        signal=signal,
+        reason=kw.get("reason", ""),
+        current_price=kw.get("current_price", 150.0),
+        avg_cost=kw.get("avg_cost", 100.0),
+        quantity=kw.get("quantity", 100),
+        gain_pct=kw.get("gain_pct", 50.0),
+        suggested_action=kw.get("suggested_action", "Hold"),
+        tail_mode=kw.get("tail_mode", False),
+        data_source="moomoo_positions_plus_yfinance_kline",
+        price_source="test",
+        bar_source="test",
+        is_real_market_data=True,
+        generated_at=datetime.now(timezone.utc),
+    ))
+
+
+@pytest.mark.asyncio
+async def test_list_signals_filters_by_default_with_active_symbols(api_broker, monkeypatch):
+    """list_signals with active_symbols excludes stale/test symbols."""
+    from app.services.kline.service import KLineService
+    from app.services.position_management.profit_tail import ProfitTailStrategyService
+    from app.services.market_data.price_resolver import PriceResolver
+    from app.db.session import create_session_factory
+
+    await init_db()
+    kline = KLineService(provider=None, enable_cache=False)
+    resolver = PriceResolver(api_broker, kline)
+    service = ProfitTailStrategyService(broker=api_broker, kline_service=kline, price_resolver=resolver)
+
+    factory = create_session_factory()
+    async with factory() as session:
+        await _insert_signal(session, "ZXCV")
+        await _insert_signal(session, "AAPL")
+        await _insert_signal(session, "MSFT")
+        await session.commit()
+
+    active_symbols = {"AAPL", "MSFT"}
+
+    async with factory() as session:
+        results = await service.list_signals(session, include_history=False, active_symbols=active_symbols)
+
+    symbols = {r.symbol for r in results}
+    assert "ZXCV" not in symbols, "Stale symbol ZXCV should be excluded"
+    assert symbols == {"AAPL", "MSFT"}
+
+
+@pytest.mark.asyncio
+async def test_list_signals_include_history_still_filters_by_active_symbols(api_broker, monkeypatch):
+    """include_history=true still respects active_symbols filter by default."""
+    from app.services.kline.service import KLineService
+    from app.services.position_management.profit_tail import ProfitTailStrategyService
+    from app.services.market_data.price_resolver import PriceResolver
+    from app.db.session import create_session_factory
+
+    await init_db()
+    kline = KLineService(provider=None, enable_cache=False)
+    resolver = PriceResolver(api_broker, kline)
+    service = ProfitTailStrategyService(broker=api_broker, kline_service=kline, price_resolver=resolver)
+
+    factory = create_session_factory()
+    async with factory() as session:
+        await _insert_signal(session, "ZXCV")
+        await _insert_signal(session, "AAPL", generated_at=datetime(2025, 1, 1, tzinfo=timezone.utc))
+        await _insert_signal(session, "AAPL", generated_at=datetime(2025, 6, 1, tzinfo=timezone.utc))
+        await _insert_signal(session, "MSFT")
+        await session.commit()
+
+    active_symbols = {"AAPL", "MSFT"}
+
+    async with factory() as session:
+        results = await service.list_signals(session, include_history=True, active_symbols=active_symbols)
+
+    symbols = {r.symbol for r in results}
+    assert "ZXCV" not in symbols, "Stale symbol ZXCV should be excluded even with include_history"
+    assert "AAPL" in symbols
+    assert "MSFT" in symbols
+    assert len(results) >= 2, "Include_history should return multiple rows per symbol"
+
+
+@pytest.mark.asyncio
+async def test_get_position_signals_api_excludes_stale_by_default(position_signals_client, api_broker, monkeypatch):
+    """GET /api/v1/position-signals excludes stale symbols by default."""
+    from app.db.session import create_session_factory
+
+    await init_db()
+    factory = create_session_factory()
+    async with factory() as session:
+        await _insert_signal(session, "ZXCV")
+        await _insert_signal(session, "AAPL")
+        await _insert_signal(session, "MSFT")
+        await session.commit()
+
+    # Mock broker to return only AAPL, MSFT as active positions
+    async def get_active_positions():
+        return [
+            PositionDto(symbol="AAPL", quantity=100, avg_cost=100.0, current_price=150.0,
+                        unrealized_pnl=5000.0, day_pnl=100.0, stop_level=None, position_pct=10.0),
+            PositionDto(symbol="MSFT", quantity=50, avg_cost=200.0, current_price=220.0,
+                        unrealized_pnl=1000.0, day_pnl=50.0, stop_level=None, position_pct=5.0),
+        ]
+    monkeypatch.setattr(api_broker, "get_positions", get_active_positions)
+
+    response = await position_signals_client.get("/api/v1/position-signals")
+    assert response.status_code == 200
+    data = response.json()
+    symbols = [row["symbol"] for row in data]
+    assert "ZXCV" not in symbols, f"Stale symbol ZXCV should not appear in response: {symbols}"
+    assert "AAPL" in symbols
+    assert "MSFT" in symbols
+
+
+@pytest.mark.asyncio
+async def test_get_position_signals_api_include_inactive_returns_all(position_signals_client, api_broker, monkeypatch):
+    """GET /api/v1/position-signals?include_inactive=true returns stale symbols too."""
+    from app.db.session import create_session_factory
+
+    await init_db()
+    factory = create_session_factory()
+    async with factory() as session:
+        await _insert_signal(session, "ZXCV")
+        await _insert_signal(session, "AAPL")
+        await _insert_signal(session, "MSFT")
+        await session.commit()
+
+    async def get_active_positions():
+        return [
+            PositionDto(symbol="AAPL", quantity=100, avg_cost=100.0, current_price=150.0,
+                        unrealized_pnl=5000.0, day_pnl=100.0, stop_level=None, position_pct=10.0),
+        ]
+    monkeypatch.setattr(api_broker, "get_positions", get_active_positions)
+
+    response = await position_signals_client.get("/api/v1/position-signals?include_inactive=true")
+    assert response.status_code == 200
+    data = response.json()
+    symbols = {row["symbol"] for row in data}
+    assert "ZXCV" in symbols, "ZXCV should appear when include_inactive=true"
+    assert "AAPL" in symbols
+    assert "MSFT" in symbols
+
+
+@pytest.mark.asyncio
+async def test_get_position_signals_api_returns_empty_when_broker_fails(position_signals_client, api_broker, monkeypatch):
+    """GET /api/v1/position-signals returns empty list when broker positions fail to load."""
+    from app.db.session import create_session_factory
+
+    await init_db()
+    factory = create_session_factory()
+    async with factory() as session:
+        await _insert_signal(session, "ZXCV")
+        await _insert_signal(session, "AAPL")
+        await session.commit()
+
+    async def failing_get_positions():
+        raise Exception("Broker connection lost")
+
+    monkeypatch.setattr(api_broker, "get_positions", failing_get_positions)
+
+    response = await position_signals_client.get("/api/v1/position-signals")
+    assert response.status_code == 200
+    data = response.json()
+    assert data == [], "Should return empty list when broker positions cannot be loaded"
+
+
+@pytest.mark.asyncio
+async def test_delete_stale_position_signals(position_signals_client, api_broker, monkeypatch):
+    """DELETE /api/v1/position-signals/stale removes symbols not in current active positions."""
+    from app.db.session import create_session_factory
+
+    await init_db()
+    factory = create_session_factory()
+    async with factory() as session:
+        await _insert_signal(session, "ZXCV")
+        await _insert_signal(session, "AAPL")
+        await _insert_signal(session, "MSFT")
+        await session.commit()
+
+    async def get_active_positions():
+        return [
+            PositionDto(symbol="AAPL", quantity=100, avg_cost=100.0, current_price=150.0,
+                        unrealized_pnl=5000.0, day_pnl=100.0, stop_level=None, position_pct=10.0),
+            PositionDto(symbol="MSFT", quantity=50, avg_cost=200.0, current_price=220.0,
+                        unrealized_pnl=1000.0, day_pnl=50.0, stop_level=None, position_pct=5.0),
+        ]
+    monkeypatch.setattr(api_broker, "get_positions", get_active_positions)
+
+    response = await position_signals_client.delete("/api/v1/position-signals/stale")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["deleted_count"] == 1
+    assert "ZXCV" in data["deleted_symbols"]
+    assert "AAPL" in data["active_symbols"]
+    assert "MSFT" in data["active_symbols"]
+
+    # Verify ZXCV is really gone from DB
+    async with factory() as session:
+        from sqlalchemy import select
+        from app.models.position_management_signal import PositionManagementSignal
+        result = await session.execute(select(PositionManagementSignal.symbol).where(PositionManagementSignal.symbol == "ZXCV"))
+        remaining = result.scalars().all()
+        assert len(remaining) == 0, "ZXCV should have been deleted"
+
+
+@pytest.mark.asyncio
+async def test_delete_stale_position_signals_dry_run(position_signals_client, api_broker, monkeypatch):
+    """DELETE /api/v1/position-signals/stale?dry_run=true does not actually delete."""
+    from app.db.session import create_session_factory
+
+    await init_db()
+    factory = create_session_factory()
+    async with factory() as session:
+        await _insert_signal(session, "ZXCV")
+        await _insert_signal(session, "AAPL")
+        await session.commit()
+
+    async def get_active_positions():
+        return [
+            PositionDto(symbol="AAPL", quantity=100, avg_cost=100.0, current_price=150.0,
+                        unrealized_pnl=5000.0, day_pnl=100.0, stop_level=None, position_pct=10.0),
+        ]
+    monkeypatch.setattr(api_broker, "get_positions", get_active_positions)
+
+    response = await position_signals_client.delete("/api/v1/position-signals/stale?dry_run=true")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["deleted_count"] == 1
+    assert "ZXCV" in data["deleted_symbols"]
+
+    # Verify ZXCV still exists in DB (dry run)
+    async with factory() as session:
+        from sqlalchemy import select
+        from app.models.position_management_signal import PositionManagementSignal
+        result = await session.execute(select(PositionManagementSignal.symbol).where(PositionManagementSignal.symbol == "ZXCV"))
+        remaining = result.scalars().all()
+        assert len(remaining) == 1, "ZXCV should still exist after dry run"

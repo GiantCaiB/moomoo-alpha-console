@@ -9,7 +9,9 @@ import GlassyCard from "@/components/shared/GlassyCard";
 import PriceDisplay from "@/components/shared/PriceDisplay";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { useState, useMemo } from "react";
-import { Play, Info, ShieldBan, AlertTriangle, Trash2 } from "lucide-react";
+import { Play, Info, ShieldBan, AlertTriangle, Trash2, BookOpen } from "lucide-react";
+import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
+import type { StrategyProfileResponse } from "@/lib/types";
 
 export default function SignalsPage() {
   const queryClient = useQueryClient();
@@ -18,6 +20,8 @@ export default function SignalsPage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [rulesProfile, setRulesProfile] = useState<StrategyProfileResponse | null>(null);
   const { health } = useBrokerHealth();
   const readOnly = isReadOnlyMode(health);
   const isMoomoo = health?.account_environment?.startsWith("moomoo") ?? false;
@@ -27,6 +31,11 @@ export default function SignalsPage() {
     queryFn: api.tradingUniverse,
   });
   const universeSymbols = universe?.symbols ?? [];
+
+  const { data: entryProfiles } = useQuery({
+    queryKey: ["strategy-profiles", "entry"],
+    queryFn: () => api.strategyProfiles("entry"),
+  });
 
   const { data: signals, isLoading } = useQuery({
     queryKey: ["signals"],
@@ -41,8 +50,11 @@ export default function SignalsPage() {
     refetchInterval: 30000,
   });
 
+  const defaultProfile = entryProfiles?.find((p) => p.is_default) ?? entryProfiles?.[0] ?? null;
+  const activeProfileId = selectedProfileId ?? defaultProfile?.id ?? null;
+
   const runMutation = useMutation({
-    mutationFn: api.runSignals,
+    mutationFn: () => api.runSignals(activeProfileId ?? undefined),
     onMutate: () => setRunFeedback(null),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["signals"] });
@@ -101,29 +113,71 @@ export default function SignalsPage() {
             Entry Signals evaluate new position ideas. Existing holdings are managed under Portfolio → Position Management.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {hasStale && (
-            <button
-              onClick={() => deleteStaleMutation.mutate()}
-              disabled={deleteStaleMutation.isPending}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent-amber/10
-                         border border-accent-amber/25 text-accent-amber text-sm font-medium
-                         hover:bg-accent-amber/15 transition-colors disabled:opacity-50"
-            >
-              <Trash2 size={16} />
-              {deleteStaleMutation.isPending ? "Clearing..." : "Clear Stale"}
-            </button>
+        <div className="flex flex-col items-end gap-2">
+          {entryProfiles && entryProfiles.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Strategy:</span>
+              <div className="relative">
+                <select
+                  value={activeProfileId ?? ""}
+                  onChange={(e) => setSelectedProfileId(e.target.value || null)}
+                  className="appearance-none px-3 py-2 pr-8 rounded-xl bg-surface border border-surface-border
+                             text-sm font-medium text-text-primary cursor-pointer
+                             focus:outline-none focus:border-accent-blue"
+                >
+                  {entryProfiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                  <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const prof = entryProfiles.find((p) => p.id === activeProfileId);
+                  if (prof) setRulesProfile(prof);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl
+                           bg-surface-hover border border-surface-border
+                           text-text-muted text-sm font-medium
+                           hover:text-text-primary transition-colors"
+                title="View strategy rules"
+              >
+                <BookOpen size={14} />
+                View Rules
+              </button>
+            </div>
           )}
-          <button
-            onClick={() => runMutation.mutate()}
-            disabled={runMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-green/10
-                       border border-accent-green/25 text-accent-green text-sm font-medium
-                       hover:bg-accent-green/15 transition-colors disabled:opacity-50"
-          >
-            <Play size={16} />
-            {runMutation.isPending ? "Running..." : "Run Entry Screener"}
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-text-muted uppercase tracking-wider">Actions:</span>
+            {hasStale && (
+              <button
+                onClick={() => deleteStaleMutation.mutate()}
+                disabled={deleteStaleMutation.isPending}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent-amber/10
+                           border border-accent-amber/25 text-accent-amber text-sm font-medium
+                           hover:bg-accent-amber/15 transition-colors disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                {deleteStaleMutation.isPending ? "Clearing..." : "Clear Stale"}
+              </button>
+            )}
+            <button
+              onClick={() => runMutation.mutate()}
+              disabled={runMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-green/10
+                         border border-accent-green/25 text-accent-green text-sm font-medium
+                         hover:bg-accent-green/15 transition-colors disabled:opacity-50"
+            >
+              <Play size={16} />
+              {runMutation.isPending ? "Running..." : "Run Entry Screener"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -298,6 +352,10 @@ export default function SignalsPage() {
             </button>
           </div>
         </GlassyCard>
+      )}
+
+      {rulesProfile && (
+        <StrategyRulesModal profile={rulesProfile} onClose={() => setRulesProfile(null)} />
       )}
     </div>
   );

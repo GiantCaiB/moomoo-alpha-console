@@ -147,6 +147,13 @@ export interface PositionSignalRunResponse {
   error: string | null;
 }
 
+export interface DeleteStalePositionSignalsResponse {
+  success: boolean;
+  deleted_count: number;
+  deleted_symbols: string[];
+  active_symbols: string[];
+}
+
 export interface RiskStatusResponse {
   kill_switch_enabled: boolean;
   broker_connected: boolean;
@@ -251,6 +258,21 @@ export interface MarketDataStatusResponse {
   failed: number;
   latest_successful_fetch: string | null;
   per_symbol: Record<string, { bars: number; source: string; last_checked: string }>;
+}
+
+export interface StrategyProfileResponse {
+  id: string;
+  name: string;
+  strategy_type: string;
+  strategy_key: string;
+  version: string;
+  description: string | null;
+  parameters: Record<string, unknown> | null;
+  rules_summary: Record<string, unknown> | null;
+  is_default: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BrokerHealthResponse {
