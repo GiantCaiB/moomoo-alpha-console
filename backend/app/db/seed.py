@@ -22,6 +22,10 @@ ENTRY_PARAMS = {
     },
     "benchmark": "SPY",
     "min_bars": 220,
+    "relative_strength_filters": {
+        "underperform_spy_20d_hard_fail_margin_pct": 3,
+        "underperform_spy_60d_hard_fail_margin_pct": 5,
+    },
 }
 
 ENTRY_RULES_SUMMARY = {
@@ -33,10 +37,17 @@ ENTRY_RULES_SUMMARY = {
     },
     "benchmark": ENTRY_PARAMS["benchmark"],
     "min_bars": ENTRY_PARAMS["min_bars"],
+    "relative_strength_filters": {
+        "hard_fail_margins": {
+            "20d": ENTRY_PARAMS["relative_strength_filters"]["underperform_spy_20d_hard_fail_margin_pct"],
+            "60d": ENTRY_PARAMS["relative_strength_filters"]["underperform_spy_60d_hard_fail_margin_pct"],
+        },
+        "description": "Underperformance beyond these margins triggers AVOID. Minor underperformance within margins may downgrade BUY to WATCH.",
+    },
     "verdicts": {
-        "BUY_STARTER": f"Score >= {ENTRY_PARAMS['buy_score_threshold']} and all hard filters pass",
-        "WATCH": f"Score >= {ENTRY_PARAMS['watch_score_threshold']} and all hard filters pass",
-        "AVOID": f"Score < {ENTRY_PARAMS['watch_score_threshold']} or hard filter failure",
+        "BUY_STARTER": f"Score >= {ENTRY_PARAMS['buy_score_threshold']} and all hard filters pass with no minor warnings",
+        "WATCH": f"Score >= {ENTRY_PARAMS['watch_score_threshold']} and all hard filters pass (may include minor RS underperformance)",
+        "AVOID": f"Score < {ENTRY_PARAMS['watch_score_threshold']} or hard filter failure (including RS underperformance > margin)",
         "DATA_ERROR": "Missing or invalid data",
     },
 }

@@ -98,6 +98,7 @@ class LocalMomentumResearchProvider:
 
             hard_filter_codes: list[str] = []
             hard_reasons: list[str] = []
+            minor_warnings: list[str] = []
 
             if sma50 is None or close <= sma50:
                 hard_filter_codes.append("price_below_sma50")
@@ -105,12 +106,26 @@ class LocalMomentumResearchProvider:
             if sma200 is None or close <= sma200:
                 hard_filter_codes.append("price_below_sma200")
                 hard_reasons.append("Price below 200 SMA")
+
+            rs_20d_margin = 3.0
+            rs_60d_margin = 5.0
+
             if ret_20d < spy_20d:
-                hard_filter_codes.append("underperforming_spy_20d")
-                hard_reasons.append(f"20d return {ret_20d:.1f}% < SPY {spy_20d:.1f}%")
+                underperform_20d = spy_20d - ret_20d
+                if underperform_20d > rs_20d_margin:
+                    hard_filter_codes.append("underperforming_spy_20d")
+                    hard_reasons.append(f"20d return underperforms SPY by more than {rs_20d_margin:.0f}%")
+                else:
+                    minor_warnings.append("short-term relative strength is slightly below SPY")
+
             if ret_60d < spy_60d:
-                hard_filter_codes.append("underperforming_spy_60d")
-                hard_reasons.append(f"60d return {ret_60d:.1f}% < SPY {spy_60d:.1f}%")
+                underperform_60d = spy_60d - ret_60d
+                if underperform_60d > rs_60d_margin:
+                    hard_filter_codes.append("underperforming_spy_60d")
+                    hard_reasons.append(f"60d return underperforms SPY by more than {rs_60d_margin:.0f}%")
+                else:
+                    minor_warnings.append("medium-term relative strength is slightly below SPY")
+
             if avg_vol_20 > 0 and current_vol < avg_vol_20 * 0.5:
                 hard_filter_codes.append("volume_ratio_below_threshold")
                 hard_reasons.append("Volume significantly below average")
@@ -135,6 +150,9 @@ class LocalMomentumResearchProvider:
                 {"category": "Market Regime", "score": regime_score, "max_score": 15, "details": f"SPY 20d={spy_20d:.1f}%"},
             ]
 
+            buy_threshold = 75.0
+            watch_threshold = 65.0
+
             entry_range = round(close * 0.98, 2)
             stop = round(close * 0.95, 2)
             target_pct = 2.0
@@ -144,17 +162,28 @@ class LocalMomentumResearchProvider:
                 verdict = "AVOID"
                 reason = "; ".join(hard_reasons)
                 failed_filters = hard_filter_codes
-            elif total >= 75:
-                verdict = "BUY_STARTER"
-                reason = f"Score: {total:.1f}/100"
-                failed_filters = None
-            elif total >= 65:
+            elif total >= buy_threshold:
+                if minor_warnings:
+                    verdict = "WATCH"
+                    reason = f"Score: {total:.1f}/100 — strong setup, but {'; '.join(minor_warnings)}"
+                    failed_filters = None
+                else:
+                    verdict = "BUY_STARTER"
+                    reason = f"Score: {total:.1f}/100"
+                    failed_filters = None
+            elif total >= watch_threshold:
                 verdict = "WATCH"
-                reason = f"Score: {total:.1f}/100 — borderline, monitor for improvement"
+                if minor_warnings:
+                    reason = f"Score: {total:.1f}/100 — watch: {'; '.join(minor_warnings)}"
+                else:
+                    reason = f"Score: {total:.1f}/100 — borderline, monitor for improvement"
                 failed_filters = None
             else:
                 verdict = "AVOID"
-                reason = f"Score: {total:.1f}/100 — insufficient setup quality"
+                if minor_warnings:
+                    reason = f"Score: {total:.1f}/100 — insufficient setup quality; {'; '.join(minor_warnings)}"
+                else:
+                    reason = f"Score: {total:.1f}/100 — insufficient setup quality"
                 failed_filters = ["below_threshold_score"]
 
             signal = SignalDto(

@@ -6,7 +6,9 @@ Tests:
 - Insufficient bars does not create BUY/WATCH/AVOID
 - Moomoo signal metadata is correct
 - No fallback to mock/local data
+- Configurable relative strength hard-fail margins
 """
+import math
 import pytest
 from datetime import date, datetime, timezone, timedelta
 from types import SimpleNamespace
@@ -328,3 +330,228 @@ async def test_scorer_uses_persisted_universe():
     symbols = {s.symbol for s in signals}
     assert "AAPL" in symbols or any(s.symbol == "AAPL" for s in signals if s.verdict == "DATA_ERROR")
     assert all(s.universe == ["AAPL", "MSFT"] or s.universe is None for s in signals if s.verdict != "DATA_ERROR")
+
+
+def _trend_bars(start: float, end: float, count: int = 260) -> pd.DataFrame:
+    """Build bars with a linear trend from start to end over count days."""
+    d = date(2024, 1, 1)
+    dates = [d + timedelta(days=i) for i in range(count)]
+    prices = [start + (end - start) * i / (count - 1) for i in range(count)]
+    return pd.DataFrame({
+        "date": dates,
+        "open": [round(p * 0.99, 2) for p in prices],
+        "high": [round(p * 1.02, 2) for p in prices],
+        "low": [round(p * 0.98, 2) for p in prices],
+        "close": [round(p, 2) for p in prices],
+        "volume": [1_000_000 + (i * 1000) for i in range(count)],
+        "adj_close": [round(p, 2) for p in prices],
+    })
+
+
+class ControlledKLineService:
+    """KLineService returning pre-built DataFrames per symbol."""
+    def __init__(self, bars_map: dict[str, pd.DataFrame]) -> None:
+        self._bars_map = bars_map
+        self.requests = 0
+        self.cache_hits = 0
+        self.cache_misses = 0
+        self.upstream_fetches = 0
+        self.failed = 0
+        self.latest_successful_fetch: datetime | None = None
+
+    async def get_daily_bars(self, symbol: str, lookback_days: int | None = None, session=None) -> pd.DataFrame:
+        return (await self.get_cached_or_fetch_daily_bars(symbol, lookback_days=lookback_days, session=session)).bars
+
+    async def get_cached_or_fetch_daily_bars(self, symbol: str, lookback_days: int | None = None, session=None):
+        self.requests += 1
+        df = self._bars_map.get(symbol)
+        if df is None:
+            self.failed += 1
+            raise RuntimeError(f"No data for {symbol}")
+        self.latest_successful_fetch = datetime.now(timezone.utc)
+        return SimpleNamespace(
+            bars=df,
+            fetch_attempted=True,
+            fetch_failed=False,
+            fetch_error=None,
+            latest_bar_from_current_fetch=df["date"].iloc[-1].isoformat(),
+        )
+
+
+def _make_rs_test_provider(
+    spy_df: pd.DataFrame,
+    symbol_df: pd.DataFrame,
+    params: dict | None = None,
+) -> MoomooMomentumResearchProvider:
+    """Build a MoomooMomentumResearchProvider with controlled bars.
+
+    Uses a broker that returns no quote, so PriceResolver falls back to
+    the bars' cached latest close. This keeps the resolved price aligned
+    with the bars' last close and avoids SMA/price mismatch.
+    """
+    bars_map = {"SPY": spy_df, "TEST": symbol_df}
+    kline = ControlledKLineService(bars_map)
+
+    class NoQuoteFakeBroker:
+        async def get_quote(self, symbol: str) -> QuoteDto:
+            return QuoteDto(symbol=symbol, bid=None, ask=None, last=None, volume=0, bid_size=0, ask_size=0, timestamp=None)
+        async def get_positions(self) -> list[PositionDto]:
+            return []
+
+    broker = NoQuoteFakeBroker()
+    merged_params = {
+        "buy_score_threshold": 75,
+        "watch_score_threshold": 65,
+        "relative_strength_filters": {
+            "underperform_spy_20d_hard_fail_margin_pct": 3,
+            "underperform_spy_60d_hard_fail_margin_pct": 5,
+        },
+    }
+    if params:
+        merged_params.update(params)
+    return MoomooMomentumResearchProvider(
+        price_resolver=PriceResolver(broker=broker, kline_service=kline),
+        kline_service=kline,
+        signal_data_source="moomoo_snapshot_plus_yfinance_kline",
+        parameters=merged_params,
+    )
+
+
+# ---------------------------------------------------------------
+# Relative strength hard-fail margin tests
+#
+# Uses _trend_bars(start, end) to build data with specific 20d/60d returns.
+# For a linear trend from start to end over 260 days:
+#   ret_20d ≈ (end / (start + (end-start)*239/259) - 1) * 100
+#   ret_60d ≈ (end / (start + (end-start)*199/259) - 1) * 100
+# The exact return depends on the start/end values.
+# ---------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_rs_minor_underperformance_within_margin_yields_watch():
+    """Score >= buy_threshold, underperformance < 3% margin => WATCH, not BUY, not AVOID.
+
+    SPY: 100 -> 200 (strong uptrend, regime=15)
+    TEST: 100 -> 180 (slightly weaker, minor 20d underperformance < 3%)
+    """
+    spy_df = _trend_bars(100.0, 200.0)
+    symbol_df = _trend_bars(100.0, 180.0)
+    provider = _make_rs_test_provider(spy_df, symbol_df)
+    signals = await provider.screen_candidates(ScreenRequest(universe=["TEST"], max_results=5))
+    assert len(signals) == 1
+    sig = signals[0]
+    assert sig.verdict == "WATCH", f"Expected WATCH for minor underperformance, got {sig.verdict} (score={sig.total_score})"
+    assert sig.total_score >= 75, f"Score should be >= buy threshold for this scenario, got {sig.total_score}"
+    assert sig.failed_filters is None, f"Should have no hard filters, got {sig.failed_filters}"
+    assert "short-term relative strength is slightly below SPY" in sig.reason
+
+
+@pytest.mark.asyncio
+async def test_rs_major_underperformance_exceeds_margin_yields_avoid():
+    """Underperformance > 3% margin => hard fail => AVOID.
+
+    SPY: 100 -> 200 (strong uptrend)
+    TEST: 100 -> 110 (barely up, major 20d underperformance >> 3%)
+    """
+    spy_df = _trend_bars(100.0, 200.0)
+    symbol_df = _trend_bars(100.0, 110.0)
+    provider = _make_rs_test_provider(spy_df, symbol_df)
+    signals = await provider.screen_candidates(ScreenRequest(universe=["TEST"], max_results=5))
+    assert len(signals) == 1
+    sig = signals[0]
+    assert sig.verdict == "AVOID", f"Expected AVOID for major underperformance, got {sig.verdict} (score={sig.total_score})"
+    assert sig.failed_filters is not None
+    assert "underperforming_spy_20d" in sig.failed_filters
+
+
+@pytest.mark.asyncio
+async def test_rs_minor_underperformance_score_above_watch_yields_watch():
+    """Score >= watch_threshold but < buy_threshold, minor underperformance => WATCH.
+
+    SPY: 100 -> 200
+    TEST: 100 -> 155 (weaker trend, score likely 65-74)
+    """
+    spy_df = _trend_bars(100.0, 200.0)
+    symbol_df = _trend_bars(100.0, 155.0)
+    provider = _make_rs_test_provider(spy_df, symbol_df)
+    signals = await provider.screen_candidates(ScreenRequest(universe=["TEST"], max_results=5))
+    assert len(signals) == 1
+    sig = signals[0]
+    assert sig.verdict == "WATCH", f"Expected WATCH, got {sig.verdict} (score={sig.total_score})"
+    assert 65 <= sig.total_score < 80, f"Score should be in watch range, got {sig.total_score}"
+    assert sig.failed_filters is None, f"Should have no hard filters, got {sig.failed_filters}"
+    assert "short-term relative strength is slightly below SPY" in sig.reason
+
+
+@pytest.mark.asyncio
+async def test_rs_minor_underperformance_score_below_watch_yields_avoid():
+    """Score below watch_threshold, minor underperformance => AVOID (below threshold, not RS fail).
+
+    SPY: 100 -> 200
+    TEST: 100 -> 120 (weaker, score likely < 65)
+    """
+    spy_df = _trend_bars(100.0, 200.0)
+    symbol_df = _trend_bars(100.0, 120.0)
+    provider = _make_rs_test_provider(spy_df, symbol_df)
+    signals = await provider.screen_candidates(ScreenRequest(universe=["TEST"], max_results=5))
+    assert len(signals) == 1
+    sig = signals[0]
+    assert sig.verdict == "AVOID", f"Expected AVOID (below watch threshold), got {sig.verdict} (score={sig.total_score})"
+    assert sig.total_score < 65, f"Score should be below watch threshold, got {sig.total_score}"
+    assert "below_threshold_score" in (sig.failed_filters or [])
+
+
+@pytest.mark.asyncio
+async def test_rs_no_underperformance_score_above_buy_yields_buy():
+    """No underperformance, score >= buy_threshold => BUY_STARTER.
+
+    SPY: 100 -> 180
+    TEST: 100 -> 200 (stronger than SPY, outperforms)
+    """
+    spy_df = _trend_bars(100.0, 180.0)
+    symbol_df = _trend_bars(100.0, 200.0)
+    provider = _make_rs_test_provider(spy_df, symbol_df)
+    signals = await provider.screen_candidates(ScreenRequest(universe=["TEST"], max_results=5))
+    assert len(signals) == 1
+    sig = signals[0]
+    assert sig.verdict == "BUY_STARTER", f"Expected BUY_STARTER, got {sig.verdict} (score={sig.total_score})"
+    assert sig.total_score >= 75, f"Score should be >= buy threshold, got {sig.total_score}"
+    assert sig.failed_filters is None
+
+
+@pytest.mark.asyncio
+async def test_rs_60d_minor_underperformance_within_margin_yields_watch():
+    """60d underperformance within 5% margin => minor warning => WATCH if score strong.
+
+    SPY: 100 -> 200 (strong)
+    TEST: 100 -> 185 (20d similar, 60d slightly weaker, minor 60d warning)
+    """
+    spy_df = _trend_bars(100.0, 200.0)
+    symbol_df = _trend_bars(100.0, 185.0)
+    provider = _make_rs_test_provider(spy_df, symbol_df)
+    signals = await provider.screen_candidates(ScreenRequest(universe=["TEST"], max_results=5))
+    assert len(signals) == 1
+    sig = signals[0]
+    assert sig.verdict == "WATCH", f"Expected WATCH for minor 60d underperformance, got {sig.verdict} (score={sig.total_score})"
+    assert sig.total_score >= 75, f"Score should be >= buy threshold, got {sig.total_score}"
+    # Should have at least one minor warning in reason
+    assert "relative strength is slightly below SPY" in sig.reason
+
+
+@pytest.mark.asyncio
+async def test_rs_60d_major_underperformance_exceeds_margin_yields_avoid():
+    """60d underperformance > 5% margin => hard fail => AVOID.
+
+    SPY: 100 -> 200 (strong)
+    TEST: 100 -> 120 (weak, both 20d and 60d underperformance)
+    """
+    spy_df = _trend_bars(100.0, 200.0)
+    symbol_df = _trend_bars(100.0, 120.0)
+    provider = _make_rs_test_provider(spy_df, symbol_df)
+    signals = await provider.screen_candidates(ScreenRequest(universe=["TEST"], max_results=5))
+    assert len(signals) == 1
+    sig = signals[0]
+    assert sig.verdict == "AVOID", f"Expected AVOID for major 60d underperformance, got {sig.verdict} (score={sig.total_score})"
+    assert sig.failed_filters is not None
+    assert "underperforming_spy_20d" in sig.failed_filters or "underperforming_spy_60d" in sig.failed_filters

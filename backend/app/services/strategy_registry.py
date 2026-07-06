@@ -37,6 +37,10 @@ _ENTRY_PARAMS: dict[str, Any] = {
     },
     "benchmark": "SPY",
     "min_bars": 220,
+    "relative_strength_filters": {
+        "underperform_spy_20d_hard_fail_margin_pct": 3,
+        "underperform_spy_60d_hard_fail_margin_pct": 5,
+    },
 }
 
 _ENTRY_RULES: dict[str, Any] = {
@@ -48,6 +52,13 @@ _ENTRY_RULES: dict[str, Any] = {
     },
     "benchmark": _ENTRY_PARAMS["benchmark"],
     "min_bars": _ENTRY_PARAMS["min_bars"],
+    "relative_strength_filters": {
+        "hard_fail_margins": {
+            "20d": _ENTRY_PARAMS["relative_strength_filters"]["underperform_spy_20d_hard_fail_margin_pct"],
+            "60d": _ENTRY_PARAMS["relative_strength_filters"]["underperform_spy_60d_hard_fail_margin_pct"],
+        },
+        "description": "Underperformance beyond these margins triggers AVOID. Minor underperformance within margins may downgrade BUY to WATCH.",
+    },
 }
 
 _POSITION_PARAMS: dict[str, Any] = {

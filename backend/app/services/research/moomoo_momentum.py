@@ -295,6 +295,7 @@ class MoomooMomentumResearchProvider:
         total, scores = self._compute_scores(close, sma50, sma200, sma20, ret_20d, ret_60d, spy_20d, spy_60d, current_vol, avg_vol_20, spy_bars, atr)
         failed_filters: list[str] = []
         hard_reasons: list[str] = []
+        minor_warnings: list[str] = []
 
         if sma50 is None or close <= sma50:
             failed_filters.append("price_below_sma50")
@@ -302,12 +303,27 @@ class MoomooMomentumResearchProvider:
         if sma200 is None or close <= sma200:
             failed_filters.append("price_below_sma200")
             hard_reasons.append("Price below 200 SMA")
+
+        rs_filters = self._parameters.get("relative_strength_filters", {})
+        rs_20d_margin = float(rs_filters.get("underperform_spy_20d_hard_fail_margin_pct", 3))
+        rs_60d_margin = float(rs_filters.get("underperform_spy_60d_hard_fail_margin_pct", 5))
+
         if ret_20d < spy_20d:
-            failed_filters.append("underperforming_spy_20d")
-            hard_reasons.append(f"20d return {ret_20d:.1f}% < SPY {spy_20d:.1f}%")
+            underperform_20d = spy_20d - ret_20d
+            if underperform_20d > rs_20d_margin:
+                failed_filters.append("underperforming_spy_20d")
+                hard_reasons.append(f"20d return underperforms SPY by more than {rs_20d_margin:.0f}%")
+            else:
+                minor_warnings.append("short-term relative strength is slightly below SPY")
+
         if ret_60d < spy_60d:
-            failed_filters.append("underperforming_spy_60d")
-            hard_reasons.append(f"60d return {ret_60d:.1f}% < SPY {spy_60d:.1f}%")
+            underperform_60d = spy_60d - ret_60d
+            if underperform_60d > rs_60d_margin:
+                failed_filters.append("underperforming_spy_60d")
+                hard_reasons.append(f"60d return underperforms SPY by more than {rs_60d_margin:.0f}%")
+            else:
+                minor_warnings.append("medium-term relative strength is slightly below SPY")
+
         if avg_vol_20 > 0 and current_vol < avg_vol_20 * 0.5:
             failed_filters.append("volume_ratio_below_threshold")
             hard_reasons.append("Volume significantly below average")
@@ -322,15 +338,25 @@ class MoomooMomentumResearchProvider:
             verdict = "AVOID"
             reason = "; ".join(hard_reasons)
         elif total >= buy_threshold:
-            verdict = "BUY_STARTER"
-            reason = f"Score: {total:.1f}/100"
+            if minor_warnings:
+                verdict = "WATCH"
+                reason = f"Score: {total:.1f}/100 — strong setup, but {'; '.join(minor_warnings)}"
+            else:
+                verdict = "BUY_STARTER"
+                reason = f"Score: {total:.1f}/100"
         elif total >= watch_threshold:
             verdict = "WATCH"
-            reason = f"Score: {total:.1f}/100 — borderline, monitor for improvement"
+            if minor_warnings:
+                reason = f"Score: {total:.1f}/100 — watch: {'; '.join(minor_warnings)}"
+            else:
+                reason = f"Score: {total:.1f}/100 — borderline, monitor for improvement"
         else:
             verdict = "AVOID"
             failed_filters.append("below_threshold_score")
-            reason = f"Score: {total:.1f}/100 — insufficient setup quality"
+            if minor_warnings:
+                reason = f"Score: {total:.1f}/100 — insufficient setup quality; {'; '.join(minor_warnings)}"
+            else:
+                reason = f"Score: {total:.1f}/100 — insufficient setup quality"
 
         stop = self._compute_stop(close, sma20, bars)
 
