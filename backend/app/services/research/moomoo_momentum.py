@@ -188,7 +188,8 @@ class MoomooMomentumResearchProvider:
                           data_quality_status: str,
                           calculated_score_before_filters: float | None,
                           invalidation: str | None = None,
-                          is_tradeable: bool = False) -> SignalDto:
+                          is_tradeable: bool = False,
+                          price_as_of: str | None = None) -> SignalDto:
         return SignalDto(
             symbol=symbol,
             verdict=verdict,
@@ -214,6 +215,7 @@ class MoomooMomentumResearchProvider:
             failed_filters=failed_filters,
             data_quality_status=data_quality_status,
             calculated_score_before_filters=calculated_score_before_filters,
+            price_as_of=price_as_of,
             strategy_profile_id=self._strategy_profile_id,
             strategy_version=self._strategy_version,
             parameters_snapshot=self._parameters,
@@ -350,6 +352,7 @@ class MoomooMomentumResearchProvider:
             data_quality_status="OK",
             calculated_score_before_filters=round(total, 1),
             invalidation=f"Close below ${stop:.2f} or 20d return < SPY" if verdict != "DATA_ERROR" else None,
+            price_as_of=price_resolution.price_timestamp,
         )
 
     def _error_from_resolution(

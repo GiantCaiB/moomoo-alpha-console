@@ -140,6 +140,7 @@ async def run_momentum_screener(
                 generated_at=sig_dto.generated_at,
                 universe_json=json.dumps(sig_dto.universe) if sig_dto.universe else None,
                 price_source=sig_dto.price_source,
+                price_as_of=sig_dto.price_as_of,
                 bar_source=sig_dto.bar_source,
                 is_real_market_data=sig_dto.is_real_market_data,
                 is_tradeable=sig_dto.is_tradeable,

@@ -18,6 +18,7 @@ import type {
   DeleteStalePositionSignalsResponse,
   MarketDataStatusResponse,
   StrategyProfileResponse,
+  CurrentPricesResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8020";
@@ -130,6 +131,12 @@ export const api = {
 
   staleSignalCount: () =>
     fetcher<StaleSignalCountResponse>("/api/v1/signals/stale-count"),
+
+  currentPrices: (symbols: string[]) =>
+    fetcher<CurrentPricesResponse>("/api/v1/signals/current-prices", {
+      method: "POST",
+      body: JSON.stringify({ symbols }),
+    }),
 
   tradingUniverse: () =>
     fetcher<TradingUniverseResponse>("/api/v1/settings/trading-universe"),

@@ -76,3 +76,17 @@ async def init_db() -> None:
     engine = create_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_run_migrations)
+
+MIGRATIONS: list[tuple[str, str]] = [
+    ("signals", "price_as_of", "VARCHAR(30)"),
+]
+
+
+def _run_migrations(connection):
+    import sqlalchemy as sa
+    for table, column, col_type in MIGRATIONS:
+        inspector = sa.inspect(connection)
+        columns = [c["name"] for c in inspector.get_columns(table)]
+        if column not in columns:
+            connection.execute(sa.text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))

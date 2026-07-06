@@ -39,6 +39,7 @@ class SignalDto:
     failed_filters: list[str] | None = None
     data_quality_status: str = "OK"
     calculated_score_before_filters: float | None = None
+    price_as_of: str | None = None
     strategy_profile_id: str | None = None
     strategy_version: str | None = None
     parameters_snapshot: dict | None = None

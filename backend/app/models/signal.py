@@ -32,6 +32,7 @@ class Signal(Base, UUIDMixin, TimestampMixin):
     )
     universe_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     price_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    price_as_of: Mapped[str | None] = mapped_column(String(30), nullable=True)
     bar_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_real_market_data: Mapped[bool] = mapped_column(Boolean, default=False)
     is_tradeable: Mapped[bool] = mapped_column(Boolean, default=False)

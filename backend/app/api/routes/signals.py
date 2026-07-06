@@ -10,13 +10,17 @@ from app.models.signal import Signal
 from app.models.strategy_profile import StrategyProfile
 from app.models.signal_score import SignalScore
 from app.db.session import get_session
-from app.api.dependencies import get_runtime_state
+from app.api.dependencies import get_price_resolver, get_runtime_state
 from app.strategies.momentum_relative_strength import run_momentum_screener
 from app.services.kline.symbol_map import normalize_symbol
 
 
 class RunSignalsRequest(BaseModel):
     strategy_profile_id: str | None = None
+
+
+class CurrentPricesRequest(BaseModel):
+    symbols: list[str]
 
 router = APIRouter()
 
@@ -94,6 +98,7 @@ async def list_signals(
             generated_at=sig.generated_at,
             universe=universe_list,
             price_source=sig.price_source,
+            price_as_of=sig.price_as_of,
             bar_source=sig.bar_source,
             is_real_market_data=sig.is_real_market_data,
             is_tradeable=sig.is_tradeable,
@@ -149,6 +154,49 @@ async def run_signals(
         "error": strategy_run.error,
         "spy_reference": getattr(strategy_run, "spy_reference", None),
     }
+
+
+@router.post("/api/v1/signals/current-prices")
+async def current_prices(
+    req: CurrentPricesRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    price_resolver = get_price_resolver()
+    result: dict[str, dict] = {}
+    for raw_symbol in req.symbols:
+        normalized = normalize_symbol(raw_symbol)
+        if normalized is None:
+            result[raw_symbol] = {
+                "current_price": None,
+                "price_source": "DATA_ERROR",
+                "price_timestamp": None,
+                "error": "Invalid symbol",
+            }
+            continue
+        try:
+            pr = await price_resolver.resolve(normalized, session=session)
+            if pr.price is not None:
+                result[normalized] = {
+                    "current_price": pr.price,
+                    "price_source": pr.price_source,
+                    "price_timestamp": pr.price_timestamp,
+                    "error": None,
+                }
+            else:
+                result[normalized] = {
+                    "current_price": None,
+                    "price_source": pr.price_source,
+                    "price_timestamp": None,
+                    "error": pr.error or "No price data available",
+                }
+        except Exception as exc:
+            result[normalized] = {
+                "current_price": None,
+                "price_source": "DATA_ERROR",
+                "price_timestamp": None,
+                "error": str(exc),
+            }
+    return {"prices": result}
 
 
 @router.get("/api/v1/signals/stale-count", response_model=StaleSignalCountResponse)

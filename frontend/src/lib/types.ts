@@ -98,6 +98,7 @@ export interface SignalResponse {
   generated_at: string | null;
   universe: string[] | null;
   price_source: string | null;
+  price_as_of: string | null;
   bar_source: string | null;
   is_real_market_data: boolean;
   is_tradeable: boolean;
@@ -235,6 +236,17 @@ export interface PreviewOrderResponse {
   reasons: string[];
   warnings: string[];
   max_allowed_quantity: number | null;
+}
+
+export interface PriceFreshnessInfo {
+  current_price: number | null;
+  price_source: string;
+  price_timestamp: string | null;
+  error: string | null;
+}
+
+export interface CurrentPricesResponse {
+  prices: Record<string, PriceFreshnessInfo>;
 }
 
 export interface Quote {

@@ -31,6 +31,7 @@ class SignalResponse(BaseModel):
     generated_at: datetime | None = None
     universe: list[str] | None = None
     price_source: str | None = None
+    price_as_of: str | None = None
     bar_source: str | None = None
     is_real_market_data: bool = False
     is_tradeable: bool = False

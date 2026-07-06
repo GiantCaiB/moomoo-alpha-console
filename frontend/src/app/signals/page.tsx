@@ -11,7 +11,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import { useState, useMemo } from "react";
 import { Play, Info, ShieldBan, AlertTriangle, Trash2, BookOpen } from "lucide-react";
 import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
-import type { StrategyProfileResponse } from "@/lib/types";
+import type { StrategyProfileResponse, PriceFreshnessInfo } from "@/lib/types";
 
 export default function SignalsPage() {
   const queryClient = useQueryClient();
@@ -49,6 +49,22 @@ export default function SignalsPage() {
     enabled: isMoomoo,
     refetchInterval: 30000,
   });
+
+  const { data: priceFreshness } = useQuery({
+    queryKey: ["signals", "current-prices", signals?.map((s) => s.symbol).join(",")],
+    queryFn: () => {
+      const symbols = signals?.map((s) => s.symbol) ?? [];
+      const unique = [...new Set(symbols)];
+      return unique.length > 0 ? api.currentPrices(unique) : { prices: {} };
+    },
+    enabled: (signals?.length ?? 0) > 0,
+    refetchInterval: 60000,
+  });
+
+  const freshnessMap = useMemo(() => {
+    if (!priceFreshness?.prices) return {};
+    return priceFreshness.prices as Record<string, PriceFreshnessInfo>;
+  }, [priceFreshness]);
 
   const defaultProfile = entryProfiles?.find((p) => p.is_default) ?? entryProfiles?.[0] ?? null;
   const activeProfileId = selectedProfileId ?? defaultProfile?.id ?? null;
@@ -250,18 +266,19 @@ export default function SignalsPage() {
               </p>
             ) : (
               <div className="space-y-2">
-                {buySignals.map((sig) => (
-                  <SignalRow
-                    key={sig.id}
-                    sig={sig}
-                    isSelected={selectedSignal === sig.id}
-                    onToggle={() =>
-                      setSelectedSignal(
-                        selectedSignal === sig.id ? null : sig.id
-                      )
-                    }
-                  />
-                ))}
+                  {buySignals.map((sig) => (
+                    <SignalRow
+                      key={sig.id}
+                      sig={sig}
+                      isSelected={selectedSignal === sig.id}
+                      onToggle={() =>
+                        setSelectedSignal(
+                          selectedSignal === sig.id ? null : sig.id
+                        )
+                      }
+                      freshnessInfo={freshnessMap[sig.symbol]}
+                    />
+                  ))}
               </div>
             )}
           </GlassyCard>
@@ -273,18 +290,19 @@ export default function SignalsPage() {
               </p>
             ) : (
               <div className="space-y-2">
-                {watchSignals.map((sig) => (
-                  <SignalRow
-                    key={sig.id}
-                    sig={sig}
-                    isSelected={selectedSignal === sig.id}
-                    onToggle={() =>
-                      setSelectedSignal(
-                        selectedSignal === sig.id ? null : sig.id
-                      )
-                    }
-                  />
-                ))}
+                  {watchSignals.map((sig) => (
+                    <SignalRow
+                      key={sig.id}
+                      sig={sig}
+                      isSelected={selectedSignal === sig.id}
+                      onToggle={() =>
+                        setSelectedSignal(
+                          selectedSignal === sig.id ? null : sig.id
+                        )
+                      }
+                      freshnessInfo={freshnessMap[sig.symbol]}
+                    />
+                  ))}
               </div>
             )}
           </GlassyCard>
@@ -296,18 +314,19 @@ export default function SignalsPage() {
               </p>
             ) : (
               <div className="space-y-2">
-                {avoidSignals.map((sig) => (
-                  <SignalRow
-                    key={sig.id}
-                    sig={sig}
-                    isSelected={selectedSignal === sig.id}
-                    onToggle={() =>
-                      setSelectedSignal(
-                        selectedSignal === sig.id ? null : sig.id
-                      )
-                    }
-                  />
-                ))}
+                  {avoidSignals.map((sig) => (
+                    <SignalRow
+                      key={sig.id}
+                      sig={sig}
+                      isSelected={selectedSignal === sig.id}
+                      onToggle={() =>
+                        setSelectedSignal(
+                          selectedSignal === sig.id ? null : sig.id
+                        )
+                      }
+                      freshnessInfo={freshnessMap[sig.symbol]}
+                    />
+                  ))}
               </div>
             )}
           </GlassyCard>
@@ -319,18 +338,19 @@ export default function SignalsPage() {
               </p>
             ) : (
               <div className="space-y-2">
-                {dataIssueSignals.map((sig) => (
-                  <SignalRow
-                    key={sig.id}
-                    sig={sig}
-                    isSelected={selectedSignal === sig.id}
-                    onToggle={() =>
-                      setSelectedSignal(
-                        selectedSignal === sig.id ? null : sig.id
-                      )
-                    }
-                  />
-                ))}
+                  {dataIssueSignals.map((sig) => (
+                    <SignalRow
+                      key={sig.id}
+                      sig={sig}
+                      isSelected={selectedSignal === sig.id}
+                      onToggle={() =>
+                        setSelectedSignal(
+                          selectedSignal === sig.id ? null : sig.id
+                        )
+                      }
+                      freshnessInfo={freshnessMap[sig.symbol]}
+                    />
+                  ))}
               </div>
             )}
           </GlassyCard>
@@ -361,14 +381,21 @@ export default function SignalsPage() {
   );
 }
 
+function computePriceDeltaPct(signalPrice: number | null, currentPrice: number | null): number | null {
+  if (signalPrice == null || currentPrice == null || signalPrice === 0) return null;
+  return ((currentPrice - signalPrice) / signalPrice) * 100;
+}
+
 function SignalRow({
   sig,
   isSelected,
   onToggle,
+  freshnessInfo,
 }: {
   sig: any;
   isSelected: boolean;
   onToggle: () => void;
+  freshnessInfo?: PriceFreshnessInfo;
 }) {
   const badge = getSourceBadge(sig.data_source);
   const reasonLabels: Record<string, string> = {
@@ -380,6 +407,12 @@ function SignalRow({
     "Risk/Reward": "Risk/Reward",
     "Market Regime": "Market",
   };
+
+  const signalPrice = sig.current_price ?? null;
+  const currentPrice = freshnessInfo?.current_price ?? null;
+  const priceDeltaPct = computePriceDeltaPct(signalPrice, currentPrice);
+  const hasPriceMoved =
+    priceDeltaPct !== null && Math.abs(priceDeltaPct) > 5;
 
   return (
     <div className="grid grid-cols-[72px_110px_150px_1fr_120px_32px]">
@@ -444,6 +477,16 @@ function SignalRow({
               <div>
                 <p className="font-medium">Moomoo market data signal</p>
                 <p className="mt-0.5">Generated from moomoo quotes and historical kline data. Research only — not tradeable in read-only mode.</p>
+              </div>
+            </div>
+          )}
+
+          {hasPriceMoved && (
+            <div className="mb-3 flex items-start gap-2 p-2 rounded bg-accent-amber/10 border border-accent-amber/30 text-accent-amber text-xs">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Price moved significantly since this signal was generated.</p>
+                <p className="mt-0.5">Refresh screener before acting.</p>
               </div>
             </div>
           )}
@@ -535,6 +578,32 @@ function SignalRow({
             <div>
               <p className="text-text-muted mb-0.5">Bar Source</p>
               <p className="font-mono text-text-primary">{sig.bar_source ?? "--"}</p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Signal Price</p>
+              <p className="font-mono text-sm text-text-primary">
+                {signalPrice != null ? `$${signalPrice.toFixed(2)}` : "--"}
+              </p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Current Price</p>
+              <p className={`font-mono text-sm ${currentPrice != null ? "text-text-primary" : "text-text-muted"}`}>
+                {currentPrice != null ? `$${currentPrice.toFixed(2)}` : "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Price Delta</p>
+              <p className={`font-mono text-sm ${priceDeltaPct != null ? (priceDeltaPct > 0 ? "text-accent-green" : "text-accent-red") : "text-text-muted"}`}>
+                {priceDeltaPct != null
+                  ? `${priceDeltaPct > 0 ? "+" : ""}${priceDeltaPct.toFixed(1)}%`
+                  : "--"}
+              </p>
+            </div>
+            <div>
+              <p className="text-text-muted mb-0.5">Price Timestamp</p>
+              <p className="font-mono text-text-primary">
+                {sig.price_as_of ?? "-"}
+              </p>
             </div>
             <div>
               <p className="text-text-muted mb-0.5">Generated At</p>
