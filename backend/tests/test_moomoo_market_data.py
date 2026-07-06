@@ -348,6 +348,33 @@ def _trend_bars(start: float, end: float, count: int = 260) -> pd.DataFrame:
     })
 
 
+def _rise_drop_bars(rise: float, drop: float, last_vol: int | None = None) -> pd.DataFrame:
+    """Build 260 bars: 200 flat at 100, 50 rising to 100+rise, 10 dropping to 100+rise-drop.
+
+    Optionally sets the last bar's volume to ``last_vol``.
+    """
+    count_flat, count_rise, count_drop = 200, 50, 10
+    prices: list[float] = [100.0] * count_flat
+    for i in range(count_rise):
+        prices.append(100 + rise * i / (count_rise - 1))
+    for i in range(count_drop):
+        prices.append(100 + rise - drop * i / (count_drop - 1))
+    vol = [1_000_000 + i * 1000 for i in range(count_flat + count_rise + count_drop)]
+    if last_vol is not None:
+        vol[-1] = last_vol
+    d = date(2024, 1, 1)
+    dates = [d + timedelta(days=i) for i in range(len(prices))]
+    return pd.DataFrame({
+        "date": dates,
+        "open": [round(p * 0.995, 2) for p in prices],
+        "high": [round(p * 1.02, 2) for p in prices],
+        "low": [round(p * 0.98, 2) for p in prices],
+        "close": [round(p, 2) for p in prices],
+        "volume": vol,
+        "adj_close": [round(p, 2) for p in prices],
+    })
+
+
 class ControlledKLineService:
     """KLineService returning pre-built DataFrames per symbol."""
     def __init__(self, bars_map: dict[str, pd.DataFrame]) -> None:
@@ -488,11 +515,12 @@ async def test_rs_minor_underperformance_score_above_watch_yields_watch():
 async def test_rs_minor_underperformance_score_below_watch_yields_avoid():
     """Score below watch_threshold, minor underperformance => AVOID (below threshold, not RS fail).
 
-    SPY: 100 -> 200
-    TEST: 100 -> 120 (weaker, score likely < 65)
+    Uses rise-then-drop bars so the symbol stays above SMA50 (avoids trend hard filter)
+    but below SMA20 (reduces entry score), with very low final volume (reduces volume score)
+    and weak SPY regime (low regime score). The result is total < 65 with no RS hard fail.
     """
-    spy_df = _trend_bars(100.0, 200.0)
-    symbol_df = _trend_bars(100.0, 120.0)
+    spy_df = _rise_drop_bars(rise=8, drop=2)
+    symbol_df = _rise_drop_bars(rise=12, drop=4, last_vol=700000)
     provider = _make_rs_test_provider(spy_df, symbol_df)
     signals = await provider.screen_candidates(ScreenRequest(universe=["TEST"], max_results=5))
     assert len(signals) == 1
