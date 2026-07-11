@@ -13,6 +13,16 @@ import { Play, Info, ShieldBan, AlertTriangle, Trash2, BookOpen } from "lucide-r
 import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
 import type { StrategyProfileResponse, PriceFreshnessInfo } from "@/lib/types";
 
+const FILTER_LABELS: Record<string, string> = {
+  "price_below_sma50": "Price below SMA50",
+  "price_below_sma200": "Price below SMA200",
+  "price_too_far_above_sma20": "Price too extended above SMA20",
+  "volume_ratio_below_threshold": "Volume below minimum threshold",
+  "underperforming_spy_20d": "20d underperformance vs SPY beyond margin",
+  "underperforming_spy_60d": "60d underperformance vs SPY beyond margin",
+  "below_threshold_score": "Score below watch threshold",
+};
+
 export default function SignalsPage() {
   const queryClient = useQueryClient();
   const [selectedSignal, setSelectedSignal] = useState<string | null>(null);
@@ -68,6 +78,18 @@ export default function SignalsPage() {
 
   const defaultProfile = entryProfiles?.find((p) => p.is_default) ?? entryProfiles?.[0] ?? null;
   const activeProfileId = selectedProfileId ?? defaultProfile?.id ?? null;
+  const activeProfile = useMemo(() => {
+    if (!entryProfiles) return null;
+    return entryProfiles.find((p) => p.id === activeProfileId) ?? entryProfiles[0] ?? null;
+  }, [entryProfiles, activeProfileId]);
+
+  const strategyParams = useMemo(() => {
+    const p = (activeProfile?.parameters ?? {}) as any;
+    return {
+      benchmark: p.benchmark ?? "SPY",
+      rs20dMargin: p.relative_strength_filters?.underperform_spy_20d_hard_fail_margin_pct ?? 3,
+    };
+  }, [activeProfile]);
 
   const runMutation = useMutation({
     mutationFn: () => api.runSignals(activeProfileId ?? undefined),
@@ -277,6 +299,7 @@ export default function SignalsPage() {
                         )
                       }
                       freshnessInfo={freshnessMap[sig.symbol]}
+                      strategyParams={strategyParams}
                     />
                   ))}
               </div>
@@ -301,6 +324,7 @@ export default function SignalsPage() {
                         )
                       }
                       freshnessInfo={freshnessMap[sig.symbol]}
+                      strategyParams={strategyParams}
                     />
                   ))}
               </div>
@@ -325,6 +349,7 @@ export default function SignalsPage() {
                         )
                       }
                       freshnessInfo={freshnessMap[sig.symbol]}
+                      strategyParams={strategyParams}
                     />
                   ))}
               </div>
@@ -349,6 +374,7 @@ export default function SignalsPage() {
                         )
                       }
                       freshnessInfo={freshnessMap[sig.symbol]}
+                      strategyParams={strategyParams}
                     />
                   ))}
               </div>
@@ -391,11 +417,13 @@ function SignalRow({
   isSelected,
   onToggle,
   freshnessInfo,
+  strategyParams,
 }: {
   sig: any;
   isSelected: boolean;
   onToggle: () => void;
   freshnessInfo?: PriceFreshnessInfo;
+  strategyParams?: { benchmark: string; rs20dMargin: number };
 }) {
   const badge = getSourceBadge(sig.data_source);
   const reasonLabels: Record<string, string> = {
@@ -535,12 +563,12 @@ function SignalRow({
             </div>
           )}
 
-          {sig.failed_filters && sig.failed_filters.length > 0 && (
+          {sig.verdict !== "AVOID" && sig.failed_filters && sig.failed_filters.length > 0 && (
             <div className="mb-4">
               <p className="text-xs text-text-muted mb-2">Failed Filters</p>
               <ul className="list-disc list-inside text-sm text-text-primary space-y-1">
                 {sig.failed_filters.map((f: string) => (
-                  <li key={f}>{f}</li>
+                  <li key={f}>{FILTER_LABELS[f] ?? f}</li>
                 ))}
               </ul>
             </div>
@@ -646,19 +674,40 @@ function SignalRow({
           <p className="text-xs text-text-muted mb-1">Reason</p>
           <p className="text-sm text-text-primary mb-3">{sig.reason}</p>
 
-          <div className="mb-3 text-sm text-text-secondary">
-            {sig.verdict === "BUY_STARTER" && (
-              <p>Starter candidate. Review risk before acting manually.</p>
-            )}
-            {sig.verdict === "WATCH" && (
-              <p>Watch because the setup is constructive but not yet a buy trigger.</p>
-            )}
-            {sig.verdict === "AVOID" && (
-              <p>Avoid because the setup is weak or the momentum filters failed.</p>
-            )}
-          </div>
+          {sig.verdict === "BUY_STARTER" && sig.stop_level != null && (
+            <div className="mb-3">
+              <p className="text-xs text-text-muted mb-1">Invalidation</p>
+              <p className="text-sm text-accent-amber">
+                Close below ${sig.stop_level.toFixed(2)} or short-term relative strength fails: 20d underperformance vs{" "}
+                {strategyParams?.benchmark ?? "SPY"} &gt; {strategyParams?.rs20dMargin ?? 3}%
+              </p>
+            </div>
+          )}
 
-          {sig.invalidation && (
+          {sig.verdict === "WATCH" && (
+            <div className="mb-3">
+              <p className="text-xs text-text-muted mb-1">Invalidation</p>
+              <p className="text-sm text-accent-amber">
+                Close below ${sig.stop_level?.toFixed(2) ?? "..."} or any hard filter is triggered.
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                Key hard filters: price below SMA50/SMA200, severe SPY underperformance, extended price, weak volume.
+              </p>
+            </div>
+          )}
+
+          {sig.verdict === "AVOID" && sig.failed_filters && sig.failed_filters.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs text-text-muted mb-1">Blocking Conditions</p>
+              <ul className="list-disc list-inside text-sm text-text-primary space-y-1">
+                {sig.failed_filters.map((f: string) => (
+                  <li key={f}>{FILTER_LABELS[f] ?? f}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {sig.verdict !== "BUY_STARTER" && sig.verdict !== "WATCH" && sig.verdict !== "AVOID" && sig.invalidation && (
             <>
               <p className="text-xs text-text-muted mb-1">Invalidation</p>
               <p className="text-sm text-accent-amber">{sig.invalidation}</p>
