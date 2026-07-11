@@ -22,6 +22,10 @@ ENTRY_PARAMS = {
     },
     "benchmark": "SPY",
     "min_bars": 220,
+    "entry_filters": {
+        "max_distance_above_sma20_pct": 15,
+        "min_volume_ratio": 0.5,
+    },
     "relative_strength_filters": {
         "underperform_spy_20d_hard_fail_margin_pct": 3,
         "underperform_spy_60d_hard_fail_margin_pct": 5,
@@ -37,6 +41,7 @@ ENTRY_RULES_SUMMARY = {
     },
     "benchmark": ENTRY_PARAMS["benchmark"],
     "min_bars": ENTRY_PARAMS["min_bars"],
+    "entry_filters": ENTRY_PARAMS["entry_filters"],
     "relative_strength_filters": {
         "hard_fail_margins": {
             "20d": ENTRY_PARAMS["relative_strength_filters"]["underperform_spy_20d_hard_fail_margin_pct"],
@@ -44,6 +49,34 @@ ENTRY_RULES_SUMMARY = {
         },
         "description": "Underperformance beyond these margins triggers AVOID. Minor underperformance within margins may downgrade BUY to WATCH.",
     },
+    "buy_criteria": [
+        f"Score >= {ENTRY_PARAMS['buy_score_threshold']} (buy_score_threshold)",
+        "No hard failed filters",
+        "Price above 50-period SMA (price_below_sma50)",
+        "Price above 200-period SMA (price_below_sma200)",
+        f"Price not more than {ENTRY_PARAMS['entry_filters']['max_distance_above_sma20_pct']}% above 20-period SMA (price_too_far_above_sma20)",
+        f"Volume ratio above {ENTRY_PARAMS['entry_filters']['min_volume_ratio']}x threshold (volume_ratio_below_threshold)",
+        f"20d return not severely underperforming SPY (underperforming_spy_20d, margin: {ENTRY_PARAMS['relative_strength_filters']['underperform_spy_20d_hard_fail_margin_pct']}%)",
+        f"60d return not severely underperforming SPY (underperforming_spy_60d, margin: {ENTRY_PARAMS['relative_strength_filters']['underperform_spy_60d_hard_fail_margin_pct']}%)",
+    ],
+    "watchlist_criteria": [
+        f"Score >= {ENTRY_PARAMS['watch_score_threshold']} (watch_score_threshold)",
+        "No major hard filter failures",
+        "Minor warnings allowed, including:",
+        "- Slight underperformance vs SPY (within hard_fail_margin)",
+        "- Slightly extended price above SMA20",
+        "- Borderline volume",
+    ],
+    "avoid_criteria": [
+        f"Score < {ENTRY_PARAMS['watch_score_threshold']} (watch_score_threshold)",
+        "OR any hard filter triggered:",
+        "- price_below_sma50: Price below 50-period SMA",
+        "- price_below_sma200: Price below 200-period SMA",
+        "- price_too_far_above_sma20: Price too far above 20-period SMA",
+        "- volume_ratio_below_threshold: Volume significantly below average",
+        "- underperforming_spy_20d: 20d return underperforms SPY beyond configured margin",
+        "- underperforming_spy_60d: 60d return underperforms SPY beyond configured margin",
+    ],
     "verdicts": {
         "BUY_STARTER": f"Score >= {ENTRY_PARAMS['buy_score_threshold']} and all hard filters pass with no minor warnings",
         "WATCH": f"Score >= {ENTRY_PARAMS['watch_score_threshold']} and all hard filters pass (may include minor RS underperformance)",

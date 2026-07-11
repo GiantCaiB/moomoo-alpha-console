@@ -519,6 +519,22 @@ function SignalRow({
             </div>
           </div>
 
+          {sig.verdict === "AVOID" &&
+            sig.calculated_score_before_filters != null &&
+            sig.calculated_score_before_filters >= 75 &&
+            sig.failed_filters &&
+            sig.failed_filters.length > 0 && (
+            <div className="mb-3 flex items-start gap-2 p-3 rounded-lg bg-accent-amber/10 border border-accent-amber/30">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-accent-amber" />
+              <div>
+                <p className="text-sm font-medium text-accent-amber">
+                  High score {Math.round(sig.calculated_score_before_filters)}/100, but blocked by hard filter.
+                </p>
+                <p className="text-xs text-text-muted mt-0.5">{sig.reason}</p>
+              </div>
+            </div>
+          )}
+
           {sig.failed_filters && sig.failed_filters.length > 0 && (
             <div className="mb-4">
               <p className="text-xs text-text-muted mb-2">Failed Filters</p>

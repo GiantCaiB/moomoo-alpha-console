@@ -10,7 +10,7 @@ import PriceDisplay from "@/components/shared/PriceDisplay";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { getSourceBadge } from "@/lib/source_badge";
 import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
-import type { StrategyProfileResponse } from "@/lib/types";
+import type { PositionResponse, StrategyProfileResponse } from "@/lib/types";
 
 type PortfolioTab = "holdings" | "management";
 
@@ -164,6 +164,10 @@ export default function PositionsPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [rulesProfile, setRulesProfile] = useState<StrategyProfileResponse | null>(null);
 
+  type SortKey = "symbol" | "status" | "quantity" | "avg_cost" | "current_price" | "market_value" | "unrealized_pnl" | "day_pnl" | "stop_level" | "weight";
+  const [sortKey, setSortKey] = useState<SortKey>("symbol");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
   const { data: positionProfiles } = useQuery({
     queryKey: ["strategy-profiles", "position_guidance"],
     queryFn: () => api.strategyProfiles("position_guidance"),
@@ -182,6 +186,42 @@ export default function PositionsPage() {
   });
 
   const activePositions = positions?.filter((p) => (p.quantity ?? 0) > 0) ?? [];
+
+  const getStatusSortValue = (unrealizedPnl: number | null, weight: number): number => {
+    if ((unrealizedPnl ?? 0) > 0) return 4;
+    if ((unrealizedPnl ?? 0) < 0) return 3;
+    if (weight >= 20) return 2;
+    return 1;
+  };
+
+  const getSortValue = (pos: PositionResponse, key: SortKey): number | string => {
+    switch (key) {
+      case "symbol": return pos.symbol;
+      case "status": return getStatusSortValue(pos.unrealized_pnl, pos.position_pct ?? 0);
+      case "quantity": return pos.quantity ?? 0;
+      case "avg_cost": return pos.avg_cost ?? 0;
+      case "current_price": return pos.current_price ?? 0;
+      case "market_value": return (pos.quantity ?? 0) * (pos.current_price ?? 0);
+      case "unrealized_pnl": return pos.unrealized_pnl ?? 0;
+      case "day_pnl": return pos.day_pnl ?? 0;
+      case "stop_level": return pos.stop_level ?? 0;
+      case "weight": return pos.position_pct ?? 0;
+    }
+  };
+
+  const sortedPositions = useMemo(() => {
+    return [...activePositions].sort((a, b) => {
+      const va = getSortValue(a, sortKey);
+      const vb = getSortValue(b, sortKey);
+      let cmp: number;
+      if (typeof va === "string" && typeof vb === "string") {
+        cmp = va.localeCompare(vb);
+      } else {
+        cmp = (va as number) - (vb as number);
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [activePositions, sortKey, sortDir]);
 
   const stats = useMemo(() => {
     const rows = positionSignals ?? [];
@@ -217,6 +257,28 @@ export default function PositionsPage() {
     }
   };
 
+  const sortTh = (label: string, key: SortKey, align: string) => {
+    const isActive = sortKey === key;
+    return (
+      <th
+        className={`${align} py-3 pr-4 cursor-pointer select-none hover:text-text-primary transition-colors`}
+        onClick={() => {
+          if (sortKey === key) {
+            setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+          } else {
+            setSortKey(key);
+            setSortDir("asc");
+          }
+        }}
+      >
+        <span className="inline-flex items-center gap-1">
+          {label}
+          {isActive && <span className="text-[10px]">{sortDir === "asc" ? "▲" : "▼"}</span>}
+        </span>
+      </th>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -240,19 +302,20 @@ export default function PositionsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="tableHeader">
-                    <th className="text-left py-3 pr-4">Symbol</th>
-                    <th className="text-left py-3 pr-4">Status</th>
-                    <th className="text-right py-3 pr-4">Qty</th>
-                    <th className="text-right py-3 pr-4">Avg Cost</th>
-                    <th className="text-right py-3 pr-4">Last Price</th>
-                    <th className="text-right py-3 pr-4">Unrealized P&amp;L</th>
-                    <th className="text-right py-3 pr-4">Day P&amp;L</th>
-                    <th className="text-right py-3 pr-4">Stop</th>
-                    <th className="text-right py-3 pr-4">Weight</th>
+                    {sortTh("Symbol", "symbol", "text-left")}
+                    {sortTh("Status", "status", "text-left")}
+                    {sortTh("Qty", "quantity", "text-right")}
+                    {sortTh("Avg Cost", "avg_cost", "text-right")}
+                    {sortTh("Last Price", "current_price", "text-right")}
+                    {sortTh("Mkt Value", "market_value", "text-right")}
+                    {sortTh("Unrealized P&amp;L", "unrealized_pnl", "text-right")}
+                    {sortTh("Day P&amp;L", "day_pnl", "text-right")}
+                    {sortTh("Stop", "stop_level", "text-right")}
+                    {sortTh("Weight", "weight", "text-right")}
                   </tr>
                 </thead>
                 <tbody>
-                  {activePositions.map((pos) => {
+                  {sortedPositions.map((pos) => {
                     const weight = pos.position_pct ?? 0;
                     return (
                       <tr key={pos.symbol} className="tableRow">
@@ -261,6 +324,7 @@ export default function PositionsPage() {
                         <td className="tableCellNumeric">{formatQuantity(pos.quantity)}</td>
                         <td className="tableCellNumeric"><PriceDisplay value={pos.avg_cost} prefix="$" /></td>
                         <td className="tableCellNumeric"><PriceDisplay value={pos.current_price} prefix="$" /></td>
+                        <td className="tableCellNumeric"><PriceDisplay value={(pos.quantity ?? 0) * (pos.current_price ?? 0)} prefix="$" /></td>
                         <td className={`tableCellNumeric ${(pos.unrealized_pnl ?? 0) >= 0 ? "value-up" : "value-down"}`}>
                           <PriceDisplay value={pos.unrealized_pnl} prefix="$" colorize />
                         </td>

@@ -76,11 +76,21 @@ def _avg_volume(bars: list[tuple], period: int) -> float | None:
 
 
 class LocalMomentumResearchProvider:
+    def __init__(self, parameters: dict | None = None) -> None:
+        self._parameters = parameters or {}
+
     async def screen_candidates(self, request: ScreenRequest) -> list[SignalDto]:
         results: list[SignalDto] = []
         spy_bars = _get_bars("SPY")
         spy_20d = _return_pct(spy_bars, 20) or 0
         spy_60d = _return_pct(spy_bars, 60) or 0
+
+        entry_filters = self._parameters.get("entry_filters", {})
+        min_vol_ratio = float(entry_filters.get("min_volume_ratio", 0.5))
+        max_dist_sma20_pct = float(entry_filters.get("max_distance_above_sma20_pct", 15.0))
+        rs_filters = self._parameters.get("relative_strength_filters", {})
+        rs_20d_margin = float(rs_filters.get("underperform_spy_20d_hard_fail_margin_pct", 3.0))
+        rs_60d_margin = float(rs_filters.get("underperform_spy_60d_hard_fail_margin_pct", 5.0))
 
         for symbol in request.universe:
             bars = _get_bars(symbol)
@@ -107,9 +117,6 @@ class LocalMomentumResearchProvider:
                 hard_filter_codes.append("price_below_sma200")
                 hard_reasons.append("Price below 200 SMA")
 
-            rs_20d_margin = 3.0
-            rs_60d_margin = 5.0
-
             if ret_20d < spy_20d:
                 underperform_20d = spy_20d - ret_20d
                 if underperform_20d > rs_20d_margin:
@@ -126,12 +133,12 @@ class LocalMomentumResearchProvider:
                 else:
                     minor_warnings.append("medium-term relative strength is slightly below SPY")
 
-            if avg_vol_20 > 0 and current_vol < avg_vol_20 * 0.5:
+            if avg_vol_20 > 0 and current_vol < avg_vol_20 * min_vol_ratio:
                 hard_filter_codes.append("volume_ratio_below_threshold")
-                hard_reasons.append("Volume significantly below average")
-            if sma20 and close > sma20 * 1.15:
+                hard_reasons.append(f"Volume significantly below average (ratio {current_vol / avg_vol_20:.2f} < {min_vol_ratio:.1f})")
+            if sma20 and close > sma20 * (1 + max_dist_sma20_pct / 100):
                 hard_filter_codes.append("price_too_far_above_sma20")
-                hard_reasons.append(f"Price {((close/sma20 - 1)*100):.1f}% above 20 SMA (> 15% max)")
+                hard_reasons.append(f"Price {((close / sma20 - 1) * 100):.1f}% above 20 SMA (> {max_dist_sma20_pct:.0f}% max)")
 
             trend_score = self._score_trend(close, sma50, sma200, sma20)
             rs_score = self._score_relative_strength(ret_20d, ret_60d, spy_20d, spy_60d)

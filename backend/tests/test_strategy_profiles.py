@@ -171,3 +171,62 @@ async def test_strategy_registry_metadata():
     assert pos_def is not None
     assert pos_def.version == "1.0.0"
     assert len(pos_def.default_parameters["trim_thresholds"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_entry_rules_summary_includes_buy_criteria():
+    from app.services.strategy_registry import StrategyRegistry
+
+    rs = StrategyRegistry.get_rules_summary("entry", "momentum_relative_strength")
+    assert rs is not None
+    assert "buy_criteria" in rs
+    assert isinstance(rs["buy_criteria"], list)
+    assert len(rs["buy_criteria"]) >= 4
+    assert any("Score" in c for c in rs["buy_criteria"])
+    assert any("SMA" in c and "50" in c for c in rs["buy_criteria"])
+    assert any("SMA" in c and "200" in c for c in rs["buy_criteria"])
+
+
+@pytest.mark.asyncio
+async def test_entry_rules_summary_includes_hard_filters():
+    from app.services.strategy_registry import StrategyRegistry
+
+    rs = StrategyRegistry.get_rules_summary("entry", "momentum_relative_strength")
+    assert rs is not None
+    assert "avoid_criteria" in rs
+    assert isinstance(rs["avoid_criteria"], list)
+    criteria_text = " ".join(rs["avoid_criteria"])
+    assert "price_below_sma50" in criteria_text
+    assert "price_below_sma200" in criteria_text
+    assert "price_too_far_above_sma20" in criteria_text
+    assert "volume_ratio_below_threshold" in criteria_text
+    assert "underperforming_spy_20d" in criteria_text
+    assert "underperforming_spy_60d" in criteria_text
+
+
+@pytest.mark.asyncio
+async def test_entry_rules_summary_includes_entry_filters():
+    from app.services.strategy_registry import StrategyRegistry
+
+    rs = StrategyRegistry.get_rules_summary("entry", "momentum_relative_strength")
+    assert rs is not None
+    assert "entry_filters" in rs
+    ef = rs["entry_filters"]
+    assert ef["max_distance_above_sma20_pct"] == 15
+    assert ef["min_volume_ratio"] == 0.5
+
+
+@pytest.mark.asyncio
+async def test_entry_rules_api_still_returns_rules_summary(api_app):
+    """Verify the API route still returns rules_summary (backward compat)."""
+    from httpx import ASGITransport, AsyncClient
+
+    transport = ASGITransport(app=api_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/api/v1/strategy-profiles?type=entry")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) >= 1
+    rs = data[0]["rules_summary"]
+    assert rs is not None
+    assert rs.get("type") == "entry"

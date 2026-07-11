@@ -304,6 +304,10 @@ class MoomooMomentumResearchProvider:
             failed_filters.append("price_below_sma200")
             hard_reasons.append("Price below 200 SMA")
 
+        entry_filters = self._parameters.get("entry_filters", {})
+        min_vol_ratio = float(entry_filters.get("min_volume_ratio", 0.5))
+        max_dist_sma20_pct = float(entry_filters.get("max_distance_above_sma20_pct", 15.0))
+
         rs_filters = self._parameters.get("relative_strength_filters", {})
         rs_20d_margin = float(rs_filters.get("underperform_spy_20d_hard_fail_margin_pct", 3))
         rs_60d_margin = float(rs_filters.get("underperform_spy_60d_hard_fail_margin_pct", 5))
@@ -324,12 +328,12 @@ class MoomooMomentumResearchProvider:
             else:
                 minor_warnings.append("medium-term relative strength is slightly below SPY")
 
-        if avg_vol_20 > 0 and current_vol < avg_vol_20 * 0.5:
+        if avg_vol_20 > 0 and current_vol < avg_vol_20 * min_vol_ratio:
             failed_filters.append("volume_ratio_below_threshold")
-            hard_reasons.append("Volume significantly below average")
-        if sma20 and close > sma20 * 1.15:
+            hard_reasons.append(f"Volume significantly below average (ratio {current_vol / avg_vol_20:.2f} < {min_vol_ratio:.1f})")
+        if sma20 and close > sma20 * (1 + max_dist_sma20_pct / 100):
             failed_filters.append("price_too_far_above_sma20")
-            hard_reasons.append(f"Price {((close / sma20 - 1) * 100):.1f}% above 20 SMA (> 15% max)")
+            hard_reasons.append(f"Price {((close / sma20 - 1) * 100):.1f}% above 20 SMA (> {max_dist_sma20_pct:.0f}% max)")
 
         buy_threshold = self._buy_threshold
         watch_threshold = self._watch_threshold

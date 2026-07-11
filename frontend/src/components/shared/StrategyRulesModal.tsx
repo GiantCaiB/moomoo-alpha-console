@@ -10,13 +10,60 @@ function formatPct(value: number | undefined | null, alwaysSign = false): string
 }
 
 function EntryRulesView({ profile }: { profile: StrategyProfileResponse }) {
+  const rs = profile.rules_summary as Record<string, any> ?? {};
   const params = profile.parameters ?? {};
-  const weights = (params as any).weights ?? {};
-  const thresholds = (params as any).buy_score_threshold != null
-    ? { buy: (params as any).buy_score_threshold, watch: (params as any).watch_score_threshold }
-    : null;
-  const benchmark = (params as any).benchmark ?? "SPY";
-  const minBars = (params as any).min_bars ?? "--";
+  const p = params as any;
+
+  const weights = (rs.scoring_weights ?? p.weights ?? {}) as Record<string, number>;
+  const benchmark = rs.benchmark ?? p.benchmark ?? "SPY";
+  const minBars = rs.min_bars ?? p.min_bars ?? "--";
+
+  const buyThreshold = p.buy_score_threshold ?? 75;
+  const watchThreshold = p.watch_score_threshold ?? 65;
+  const maxSma20Dist = p.entry_filters?.max_distance_above_sma20_pct ?? 15;
+  const minVolRatio = p.entry_filters?.min_volume_ratio ?? 0.5;
+  const rs20dMargin = p.relative_strength_filters?.underperform_spy_20d_hard_fail_margin_pct ?? 3;
+  const rs60dMargin = p.relative_strength_filters?.underperform_spy_60d_hard_fail_margin_pct ?? 5;
+
+  const thresholds = rs.thresholds ?? { buy: buyThreshold, watch: watchThreshold };
+  const entryFilters = rs.entry_filters ?? p.entry_filters ?? {};
+  const rsFilters = rs.relative_strength_filters ?? {};
+
+  const buyCriteria: string[] = rs.buy_criteria?.length
+    ? rs.buy_criteria
+    : [
+        `Score \u2265 ${buyThreshold}`,
+        "Price above SMA50",
+        "Price above SMA200",
+        `Price not more than ${maxSma20Dist}% above SMA20`,
+        `Volume \u2265 ${minVolRatio}x 20-day average`,
+        `20d return does not underperform ${benchmark} by more than ${rs20dMargin}%`,
+        `60d return does not underperform ${benchmark} by more than ${rs60dMargin}%`,
+        "No data quality issues",
+      ];
+
+  const watchlistCriteria: string[] = rs.watchlist_criteria?.length
+    ? rs.watchlist_criteria
+    : [
+        `Score \u2265 ${watchThreshold}`,
+        "No major hard filter failures",
+        "Minor warnings allowed:",
+        `  slight underperformance vs ${benchmark}`,
+        "  borderline volume",
+        "  slightly extended price",
+      ];
+
+  const avoidCriteria: string[] = rs.avoid_criteria?.length
+    ? rs.avoid_criteria
+    : [
+        `Score < ${watchThreshold}`,
+        "Price below SMA50",
+        "Price below SMA200",
+        `Price more than ${maxSma20Dist}% above SMA20`,
+        `Volume < ${minVolRatio}x 20-day average`,
+        `20d return underperforms ${benchmark} by more than ${rs20dMargin}%`,
+        `60d return underperforms ${benchmark} by more than ${rs60dMargin}%`,
+      ];
 
   return (
     <div className="space-y-5">
@@ -27,7 +74,7 @@ function EntryRulesView({ profile }: { profile: StrategyProfileResponse }) {
 
       <div>
         <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-          Scoring Weights
+          Scoring Model
         </h4>
         <div className="space-y-1">
           {Object.entries(weights).map(([key, val]) => (
@@ -38,53 +85,120 @@ function EntryRulesView({ profile }: { profile: StrategyProfileResponse }) {
               <div className="flex-1 h-2 rounded-full bg-surface-border overflow-hidden">
                 <div
                   className="h-full rounded-full bg-accent-blue"
-                  style={{ width: `${(val as number)}%` }}
+                  style={{ width: `${val}%` }}
                 />
               </div>
               <span className="text-sm font-mono text-text-primary w-8 text-right">
-                {val as number}
+                {val}
               </span>
             </div>
           ))}
         </div>
+        <p className="text-xs text-text-muted mt-1">
+          Total: {Object.values(weights).reduce((a: number, b: number) => a + b, 0)} / 100
+        </p>
       </div>
 
-      {thresholds && (
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-            Signal Thresholds
-          </h4>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="p-3 rounded-lg bg-accent-green/10 border border-accent-green/20">
-              <p className="text-xs text-text-muted mb-1">Buy Candidate</p>
-              <p className="text-lg font-mono text-accent-green font-bold">
-                Score &ge; {thresholds.buy}
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-accent-amber/10 border border-accent-amber/20">
-              <p className="text-xs text-text-muted mb-1">Watchlist</p>
-              <p className="text-lg font-mono text-accent-amber font-bold">
-                Score &ge; {thresholds.watch}
-              </p>
-            </div>
-            <div className="p-3 rounded-lg bg-accent-red/10 border border-accent-red/20">
-              <p className="text-xs text-text-muted mb-1">Avoid / No Setup</p>
-              <p className="text-lg font-mono text-accent-red font-bold">
-                Score &lt; {thresholds.watch}
-              </p>
-            </div>
-          </div>
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
+          Buy Candidate Criteria
+        </h4>
+        <div className="p-3 rounded-lg bg-accent-green/10 border border-accent-green/20">
+          <ul className="space-y-1">
+            {buyCriteria.map((c: string, i: number) => (
+              <li key={i} className="text-sm text-text-primary flex items-start gap-2">
+                <span className="text-accent-green mt-0.5 shrink-0">&#10003;</span>
+                <span>{c.startsWith("  ") ? c.trim() : c}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
+      </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div className="p-3 rounded-lg bg-surface-hover">
-          <span className="text-text-muted">Benchmark</span>
-          <p className="font-mono font-bold text-text-primary">{benchmark}</p>
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
+          Watchlist Criteria
+        </h4>
+        <div className="p-3 rounded-lg bg-accent-amber/10 border border-accent-amber/20">
+          <ul className="space-y-1">
+            {watchlistCriteria.map((c: string, i: number) => {
+              const isIndent = c.startsWith("  ");
+              return (
+                <li key={i} className={`text-sm flex items-start gap-2 ${isIndent ? "text-text-secondary ml-4" : "text-text-primary"}`}>
+                  <span className="text-accent-amber mt-0.5 shrink-0">{isIndent ? "\u2022" : "\u26A0"}</span>
+                  <span>{isIndent ? c.trim() : c}</span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
-        <div className="p-3 rounded-lg bg-surface-hover">
-          <span className="text-text-muted">Min History</span>
-          <p className="font-mono font-bold text-text-primary">{minBars} bars</p>
+      </div>
+
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
+          Avoid / Hard Fails
+        </h4>
+        <div className="p-3 rounded-lg bg-accent-red/10 border border-accent-red/20">
+          <ul className="space-y-1">
+            {avoidCriteria.map((c: string, i: number) => (
+              <li key={i} className="text-sm text-text-primary flex items-start gap-2">
+                <span className="text-accent-red mt-0.5 shrink-0">&#10007;</span>
+                <span>{c}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
+          Key Parameters
+        </h4>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="p-3 rounded-lg bg-surface-hover">
+            <span className="text-text-muted">Buy Threshold</span>
+            <p className="font-mono font-bold text-accent-green">
+              Score &ge; {thresholds?.buy ?? "--"}
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-surface-hover">
+            <span className="text-text-muted">Watch Threshold</span>
+            <p className="font-mono font-bold text-accent-amber">
+              Score &ge; {thresholds?.watch ?? "--"}
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-surface-hover">
+            <span className="text-text-muted">Max SMA20 Distance</span>
+            <p className="font-mono font-bold text-text-primary">
+              {entryFilters.max_distance_above_sma20_pct ?? maxSma20Dist}%
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-surface-hover">
+            <span className="text-text-muted">Min Volume Ratio</span>
+            <p className="font-mono font-bold text-text-primary">
+              {entryFilters.min_volume_ratio ?? minVolRatio}x
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-surface-hover">
+            <span className="text-text-muted">RS 20d Hard Fail Margin</span>
+            <p className="font-mono font-bold text-text-primary">
+              &gt; {rsFilters.hard_fail_margins?.["20d"] ?? rs20dMargin}%
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-surface-hover">
+            <span className="text-text-muted">RS 60d Hard Fail Margin</span>
+            <p className="font-mono font-bold text-text-primary">
+              &gt; {rsFilters.hard_fail_margins?.["60d"] ?? rs60dMargin}%
+            </p>
+          </div>
+          <div className="p-3 rounded-lg bg-surface-hover">
+            <span className="text-text-muted">Benchmark</span>
+            <p className="font-mono font-bold text-text-primary">{benchmark}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-surface-hover">
+            <span className="text-text-muted">Min History</span>
+            <p className="font-mono font-bold text-text-primary">{minBars} bars</p>
+          </div>
         </div>
       </div>
     </div>
