@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class PositionResponse(BaseModel):
     id: str
     symbol: str
-    quantity: int
+    quantity: float
     avg_cost: float
     current_price: float | None
     unrealized_pnl: float | None

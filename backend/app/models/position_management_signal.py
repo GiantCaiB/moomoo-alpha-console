@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, ForeignKey
+from sqlalchemy import Boolean, DateTime, Float, String, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UUIDMixin, TimestampMixin
@@ -14,10 +14,10 @@ class PositionManagementSignal(Base, UUIDMixin, TimestampMixin):
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     current_price: Mapped[float | None] = mapped_column(Float, nullable=True)
     avg_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
-    quantity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    quantity: Mapped[float | None] = mapped_column(Float, nullable=True)
     gain_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
     suggested_action: Mapped[str | None] = mapped_column(Text, nullable=True)
-    suggested_quantity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    suggested_quantity: Mapped[float | None] = mapped_column(Float, nullable=True)
     suggested_trim_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
     tail_mode: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     weekly_close: Mapped[float | None] = mapped_column(Float, nullable=True)

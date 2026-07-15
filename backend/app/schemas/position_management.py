@@ -10,10 +10,10 @@ class PositionManagementSignalResponse(BaseModel):
     reason: str | None
     current_price: float | None
     avg_cost: float | None
-    quantity: int | None
+    quantity: float | None
     gain_pct: float | None
     suggested_action: str | None
-    suggested_quantity: int | None
+    suggested_quantity: float | None
     suggested_trim_pct: float | None
     tail_mode: bool
     weekly_close: float | None

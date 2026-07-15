@@ -24,7 +24,7 @@ export function formatQuantity(value: number | null | undefined): string {
   if (value === null || value === undefined) return "--";
   return value.toLocaleString("en-US", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 4,
+    maximumFractionDigits: 6,
   });
 }
 

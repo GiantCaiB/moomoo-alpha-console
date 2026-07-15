@@ -27,10 +27,10 @@ class ProfitTailSignalResult:
     reason: str
     current_price: float | None
     avg_cost: float | None
-    quantity: int | None
+    quantity: float | None
     gain_pct: float | None
     suggested_action: str | None
-    suggested_quantity: int | None
+    suggested_quantity: float | None
     suggested_trim_pct: float | None
     tail_mode: bool
     weekly_close: float | None
@@ -143,7 +143,7 @@ class ProfitTailStrategyService:
                 error_signal = self._data_error(
                     symbol=position.symbol,
                     avg_cost=position.avg_cost,
-                    quantity=int(position.quantity or 0),
+                    quantity=float(position.quantity or 0),
                     reason=f"Evaluation failed: {exc}",
                     bar_source="yfinance_cached_daily_bars",
                 )
@@ -182,7 +182,7 @@ class ProfitTailStrategyService:
             rows = [row for row in rows if row.symbol in active_symbols]
         return [self._row_to_result(row) for row in rows]
 
-    async def _load_or_create_state(self, session: AsyncSession, symbol: str, quantity: int, avg_cost: float) -> PositionLifecycleSnapshot:
+    async def _load_or_create_state(self, session: AsyncSession, symbol: str, quantity: float, avg_cost: float) -> PositionLifecycleSnapshot:
         result = await session.execute(select(PositionLifecycleState).where(PositionLifecycleState.symbol == symbol))
         state = result.scalar_one_or_none()
         was_created = False
@@ -191,7 +191,7 @@ class ProfitTailStrategyService:
             state = PositionLifecycleState(
                 symbol=symbol,
                 original_entry_price=float(avg_cost or 0.0),
-                original_quantity=int(quantity or 0),
+                original_quantity=float(quantity or 0),
                 original_cost_basis=float((avg_cost or 0.0) * (quantity or 0)),
                 highest_price_since_entry=0.0,
                 trim_25_done=False,
@@ -217,7 +217,7 @@ class ProfitTailStrategyService:
 
     async def _evaluate_position(self, session: AsyncSession, position, eval_state: ProfitTailEvalState) -> ProfitTailSignalResult:
         symbol = position.symbol
-        quantity = int(position.quantity or 0)
+        quantity = float(position.quantity or 0)
         avg_cost = float(position.avg_cost) if position.avg_cost is not None else None
 
         if quantity <= 0:
@@ -287,7 +287,7 @@ class ProfitTailStrategyService:
             reason = f"Position down more than {reduce_pct:.0f}%; consider reducing exposure manually."
             suggested_action = "Reduce exposure manually"
             suggested_trim_pct = 50
-            suggested_quantity = max(1, quantity // 2)
+            suggested_quantity = round(quantity / 2, 6)
         elif gain_pct <= float(ld.get("stop_adding_pct", -15)) or (daily_sma200 is not None and current_price < daily_sma200 and gain_pct <= float(ld.get("stop_adding_pct", -15))):
             stop_pct = abs(ld.get("stop_adding_pct", -15))
             signal = "STOP_ADDING"
@@ -316,7 +316,7 @@ class ProfitTailStrategyService:
                 reason = "Tail position lost weekly SMA20 but remains above weekly SMA30."
                 suggested_action = "Trim tail position"
                 suggested_trim_pct = 50
-                suggested_quantity = max(1, quantity // 2)
+                suggested_quantity = round(quantity / 2, 6)
             else:
                 signal = "HOLD_TAIL"
                 reason = "Tail position remains above weekly SMA20."
@@ -329,7 +329,7 @@ class ProfitTailStrategyService:
                 suggested_action = "Recover cost basis and keep remaining shares as profit tail"
                 shares_to_recover_cost = (eval_state.original_cost_basis or (avg_cost * quantity)) / current_price if current_price > 0 else quantity * 0.5
                 candidate = min(quantity * 0.5, shares_to_recover_cost)
-                suggested_quantity = max(1, int(candidate)) if candidate and candidate > 0 else max(1, int(quantity * 0.5))
+                suggested_quantity = round(candidate, 6) if candidate and candidate > 0 else round(quantity * 0.5, 6)
             else:
                 trim_found = False
                 for trim_def in sorted(self._trim_thresholds, key=lambda t: t["gain_pct"], reverse=True):
@@ -342,7 +342,7 @@ class ProfitTailStrategyService:
                         reason = f"Position is up {tg:.0f}%+, trim level not completed."
                         suggested_action = f"Trim {tp:.0f}% of position"
                         suggested_trim_pct = tp
-                        suggested_quantity = max(1, int(quantity * (tp / 100.0)))
+                        suggested_quantity = round(quantity * (tp / 100.0), 6)
                         trim_found = True
                         break
                 if not trim_found:
@@ -419,7 +419,7 @@ class ProfitTailStrategyService:
         self,
         symbol: str,
         avg_cost: float | None,
-        quantity: int,
+        quantity: float,
         reason: str,
         current_price: float | None = None,
         *,

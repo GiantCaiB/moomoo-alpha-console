@@ -5,6 +5,7 @@ from app.services.broker.moomoo import (
     MOOMOO_SDK_AVAILABLE,
     _to_moomoo_symbol,
     _from_moomoo_symbol,
+    _safe_float,
 )
 from app.services.broker.base import LimitOrderRequest
 
@@ -26,6 +27,9 @@ class TestSymbolMapping:
         symbols = ["AAPL", "MSFT", "NVDA", "SPY", "QQQ"]
         for s in symbols:
             assert _from_moomoo_symbol(_to_moomoo_symbol(s)) == s
+
+    def test_fractional_position_quantity_is_preserved(self):
+        assert _safe_float("0.25") == 0.25
 
 
 @pytest.mark.skipif(MOOMOO_SDK_AVAILABLE, reason="SDK is installed — test requires SDK to be absent")

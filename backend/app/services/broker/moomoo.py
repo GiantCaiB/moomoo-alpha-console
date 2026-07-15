@@ -343,7 +343,8 @@ class MoomooBrokerAdapter:
             positions: list[PositionDto] = []
             for _, p in pos_list.iterrows():
                 symbol = _from_moomoo_symbol(str(_series_get(p, "code", "")))
-                qty = _safe_int(_series_get(p, "qty"))
+                # Moomoo can return fractional shares, especially for rewards.
+                qty = _safe_float(_series_get(p, "qty"))
                 cost = _safe_float(_series_get(p, "cost_price"))
                 price = _safe_float(_series_get(p, "nominal_price"))
                 market_val = _safe_float(_series_get(p, "market_val"))
@@ -355,7 +356,7 @@ class MoomooBrokerAdapter:
 
                 positions.append(PositionDto(
                     symbol=symbol,
-                    quantity=qty,
+                    quantity=round(qty, 6),
                     avg_cost=round(cost, 2),
                     current_price=round(price, 2) if price else None,
                     unrealized_pnl=round(pl_val, 2),

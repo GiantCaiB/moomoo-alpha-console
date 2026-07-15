@@ -112,7 +112,7 @@ function SignalSection({
                     <p><span className="text-text-muted">Weekly SMA20:</span> <PriceDisplay value={row.weekly_sma20} prefix="$" /></p>
                     <p><span className="text-text-muted">Weekly SMA30:</span> <PriceDisplay value={row.weekly_sma30} prefix="$" /></p>
                     <p><span className="text-text-muted">Suggested trim %:</span> {row.suggested_trim_pct ?? "--"}</p>
-                    <p><span className="text-text-muted">Suggested quantity:</span> {row.suggested_quantity ?? "--"}</p>
+                    <p><span className="text-text-muted">Suggested quantity:</span> {formatQuantity(row.suggested_quantity)}</p>
                   </div>
                   <div className="md:col-span-2 space-y-1 text-text-secondary">
                     <p><span className="text-text-muted">Reason:</span> {row.reason ?? "--"}</p>
