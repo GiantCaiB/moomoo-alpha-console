@@ -5,6 +5,7 @@ Uses the runtime price resolver and KLineService only.
 No mock data, no local synthetic bars, and no moomoo historical pulls.
 """
 import logging
+import math
 from datetime import date, datetime, timezone
 from statistics import mean
 
@@ -29,15 +30,19 @@ def _df_to_bars(df: pd.DataFrame, symbol: str) -> list[BarData]:
             current_date = current_date.date()
         elif isinstance(current_date, str):
             current_date = date.fromisoformat(current_date[:10])
+        values = {field: float(row[field]) for field in ("open", "high", "low", "close", "volume")}
+        invalid_fields = [field for field, value in values.items() if not math.isfinite(value)]
+        if invalid_fields:
+            raise ValueError(f"Invalid non-finite market data for {symbol}: {', '.join(invalid_fields)}")
         bars.append(
             BarData(
                 symbol=symbol,
                 bar_date=current_date,
-                open=float(row["open"]),
-                high=float(row["high"]),
-                low=float(row["low"]),
-                close=float(row["close"]),
-                volume=float(row["volume"]),
+                open=values["open"],
+                high=values["high"],
+                low=values["low"],
+                close=values["close"],
+                volume=values["volume"],
             )
         )
     return bars
@@ -258,7 +263,13 @@ class MoomooMomentumResearchProvider:
             bars = _df_to_bars(bars_df, symbol)
         except Exception as exc:
             message = str(exc)
-            quality = "INSUFFICIENT_HISTORY" if "insufficient history" in message.lower() or "less than 200" in message.lower() else "PROVIDER_ERROR"
+            quality = (
+                "INVALID_DATA"
+                if isinstance(exc, (ValueError, TypeError)) or "non-finite" in message.lower() or "invalid" in message.lower()
+                else "INSUFFICIENT_HISTORY"
+                if "insufficient history" in message.lower() or "less than 200" in message.lower()
+                else "PROVIDER_ERROR"
+            )
             return self._error_signal(symbol, message, quality, universe)
 
         if bars_df.empty:
@@ -291,6 +302,30 @@ class MoomooMomentumResearchProvider:
         avg_vol_20 = _avg_volume(bars, 20) or 0
         current_vol = bars[-1].volume
         atr = _estimate_atr(bars, 14)
+
+        required_indicators = {
+            "current price": close,
+            "SMA20": sma20,
+            "SMA50": sma50,
+            "SMA200": sma200,
+            "20d return": ret_20d,
+            "60d return": ret_60d,
+            "average volume": avg_vol_20,
+            "current volume": current_vol,
+            "SPY 20d return": spy_20d,
+            "SPY 60d return": spy_60d,
+        }
+        invalid_indicators = [
+            name for name, value in required_indicators.items()
+            if value is None or not math.isfinite(float(value))
+        ]
+        if invalid_indicators:
+            return self._error_signal(
+                symbol,
+                f"Invalid indicator data: {', '.join(invalid_indicators)}",
+                "INVALID_DATA",
+                universe,
+            )
 
         total, scores = self._compute_scores(close, sma50, sma200, sma20, ret_20d, ret_60d, spy_20d, spy_60d, current_vol, avg_vol_20, spy_bars, atr)
         failed_filters: list[str] = []

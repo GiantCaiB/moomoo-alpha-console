@@ -192,6 +192,38 @@ async def test_insufficient_bars_does_not_create_fake_signal():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("invalid_value", [math.nan, math.inf, -math.inf])
+async def test_non_finite_indicators_produce_data_error(invalid_value):
+    kline = FakeKLineService()
+    invalid_bars = _df_from_bars()
+    invalid_bars.loc[10, "close"] = invalid_value
+
+    async def get_invalid_bars(symbol, lookback_days=None, session=None):
+        bars = invalid_bars if symbol == "AAPL" else _df_from_bars()
+        return SimpleNamespace(
+            bars=bars,
+            fetch_attempted=True,
+            fetch_failed=False,
+            fetch_error=None,
+            latest_bar_from_current_fetch=bars["date"].iloc[-1].isoformat(),
+        )
+
+    kline.get_cached_or_fetch_daily_bars = get_invalid_bars
+    provider = MoomooMomentumResearchProvider(
+        price_resolver=PriceResolver(broker=FakeBroker(), kline_service=kline),
+        kline_service=kline,
+        signal_data_source="moomoo_snapshot_plus_yfinance_kline",
+    )
+
+    signals = await provider.screen_candidates(ScreenRequest(universe=["AAPL"], max_results=5))
+    assert signals[0].verdict == "DATA_ERROR"
+    assert signals[0].total_score == 0.0
+    assert signals[0].scores == []
+    assert signals[0].data_quality_status == "INVALID_DATA"
+    assert "NaN" not in (signals[0].reason or "")
+
+
+@pytest.mark.asyncio
 async def test_moomoo_signal_metadata():
     """Moomoo-generated signals must have correct provenance metadata."""
     kline = FakeKLineService()

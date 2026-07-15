@@ -53,6 +53,35 @@ def _get_bars(symbol: str) -> list[tuple]:
     return MOCK_BARS[symbol]
 
 
+def _has_invalid_numeric_data(bars: list[tuple]) -> bool:
+    return any(
+        not all(math.isfinite(float(value)) for value in bar[1:])
+        for bar in bars
+    )
+
+
+def _data_error(symbol: str, reason: str, universe: list[str]) -> SignalDto:
+    return SignalDto(
+        symbol=symbol,
+        verdict="DATA_ERROR",
+        total_score=0.0,
+        scores=[],
+        reason=reason,
+        has_error=True,
+        error_message=reason,
+        current_price=None,
+        strategy_name="momentum_relative_strength",
+        data_source="local_generated",
+        generated_at=datetime.now(timezone.utc),
+        universe=list(universe),
+        price_source="DATA_ERROR",
+        bar_source="mock_generated",
+        is_real_market_data=False,
+        is_tradeable=False,
+        data_quality_status="INVALID_DATA",
+    )
+
+
 def _sma(bars: list[tuple], period: int) -> float | None:
     if len(bars) < period:
         return None
@@ -82,6 +111,8 @@ class LocalMomentumResearchProvider:
     async def screen_candidates(self, request: ScreenRequest) -> list[SignalDto]:
         results: list[SignalDto] = []
         spy_bars = _get_bars("SPY")
+        if _has_invalid_numeric_data(spy_bars):
+            return [_data_error(symbol, "Invalid indicator data: SPY market data contains NaN or infinity", request.universe) for symbol in request.universe]
         spy_20d = _return_pct(spy_bars, 20) or 0
         spy_60d = _return_pct(spy_bars, 60) or 0
 
@@ -94,6 +125,9 @@ class LocalMomentumResearchProvider:
 
         for symbol in request.universe:
             bars = _get_bars(symbol)
+            if _has_invalid_numeric_data(bars):
+                results.append(_data_error(symbol, "Invalid indicator data: market data contains NaN or infinity", request.universe))
+                continue
             if len(bars) < 200:
                 continue
 

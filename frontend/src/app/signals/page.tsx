@@ -11,6 +11,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import { useState, useMemo } from "react";
 import { Play, Info, ShieldBan, AlertTriangle, Trash2, BookOpen } from "lucide-react";
 import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
+import RunHistoryDrawer, { type RunHistoryItem } from "@/components/shared/RunHistoryDrawer";
 import type { SignalResponse, StrategyProfileResponse, PriceFreshnessInfo } from "@/lib/types";
 
 const FILTER_LABELS: Record<string, string> = {
@@ -279,13 +280,13 @@ export default function SignalsPage() {
       )}
 
       {latestRun && (
-        <div className={`mb-4 px-4 py-3 rounded-xl border flex items-center gap-4 text-sm ${latestRun.status === "FAILED" ? "border-accent-red/30 bg-accent-red/10 text-accent-red" : "border-surface-border bg-surface-hover/50 text-text-secondary"}`}>
+        <div className={`mb-4 px-4 py-3 rounded-xl border flex items-center gap-4 text-sm ${latestRun.status === "FAILED" ? "border-accent-red/30 bg-accent-red/10 text-accent-red" : latestRun.data_error_count > 0 ? "border-accent-amber/30 bg-accent-amber/10 text-accent-amber" : "border-accent-green/20 bg-accent-green/5 text-text-secondary"}`}>
           <div className="flex-1">
             <p className="font-medium text-text-primary">Last Entry Signal Run</p>
             <p className="text-xs mt-1">{latestRun.strategy_name} {latestRun.strategy_version ?? ""} · {latestRun.signals_generated} signals · {latestRun.data_error_count} data errors · {formatRunDate(latestRun.finished_at ?? latestRun.created_at)}</p>
             {latestRun.status === "FAILED" && <p className="mt-1 font-medium">Run failed: {latestRun.error_message ?? "Unknown error"}</p>}
           </div>
-          <span className="font-mono text-xs">{latestRun.status}</span>
+          <StatusBadge status={latestRun.status === "COMPLETED" && latestRun.data_error_count > 0 ? "COMPLETED_WITH_ERRORS" : latestRun.status} />
           <button onClick={() => setShowRunHistory(true)} className="text-xs underline">View Run History</button>
         </div>
       )}
@@ -430,12 +431,22 @@ export default function SignalsPage() {
         <StrategyRulesModal profile={rulesProfile} onClose={() => setRulesProfile(null)} />
       )}
       {showRunHistory && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={() => setShowRunHistory(false)}>
-          <div className="w-full max-w-md h-full bg-surface-primary border-l border-surface-border p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5"><h2 className="text-lg font-semibold">Entry Signal Run History</h2><button onClick={() => setShowRunHistory(false)} className="text-text-muted">Close</button></div>
-            <div className="space-y-2">{(signalRuns ?? []).map((run) => <div key={run.id} className="p-3 rounded-lg border border-surface-border bg-surface-hover/40"><div className="flex justify-between"><span className="font-medium">{run.status}</span><span className="font-mono text-xs text-text-muted">{run.id.slice(0, 8)}</span></div><p className="text-xs text-text-secondary mt-1">{run.strategy_name} {run.strategy_version ?? ""}</p><p className="text-xs text-text-muted mt-1">{run.signals_generated} signals · {run.data_error_count} errors · {formatRunDate(run.finished_at ?? run.created_at)}</p>{run.error_message && <p className="text-xs text-accent-red mt-1">{run.error_message}</p>}</div>)}</div>
-          </div>
-        </div>
+        <RunHistoryDrawer
+          title="Entry Signal Run History"
+          runs={(signalRuns ?? []).map((run): RunHistoryItem => ({
+            id: run.id,
+            strategy_name: run.strategy_name,
+            strategy_version: run.strategy_version,
+            status: run.status,
+            scanned_count: run.symbols_scanned,
+            generated_count: run.signals_generated,
+            data_error_count: run.data_error_count,
+            finished_at: run.finished_at,
+            created_at: run.created_at,
+            error_message: run.error_message,
+          }))}
+          onClose={() => setShowRunHistory(false)}
+        />
       )}
     </div>
   );

@@ -316,8 +316,8 @@ export default function Cockpit() {
         </GlassyCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] gap-6 mb-6 items-start">
+        <div className="order-1 lg:col-start-1 lg:row-start-1">
           <GlassyCard title="Entry Signal Highlights">
             {activeSignals.length === 0 ? (
               <div className="py-8 text-center text-text-muted text-sm">
@@ -372,7 +372,7 @@ export default function Cockpit() {
           </GlassyCard>
         </div>
 
-        <div className="space-y-4">
+        <div className="order-3 lg:col-start-2 lg:row-start-1 lg:row-span-2 space-y-4">
           <GlassyCard title="Open Orders">
             {openOrders.length === 0 ? (
               <p className="text-sm text-text-muted py-4 text-center">
@@ -494,8 +494,7 @@ export default function Cockpit() {
             </div>
           </GlassyCard>
         </div>
-      </div>
-
+      <div className="order-2 lg:col-start-1 lg:row-start-2">
       <GlassyCard title="Portfolio Holdings">
         {(() => {
           const activePositions = positions?.filter((p) => (p.quantity ?? 0) > 0) ?? [];
@@ -629,6 +628,8 @@ export default function Cockpit() {
           );
         })()}
       </GlassyCard>
+      </div>
+      </div>
     </div>
   );
 }

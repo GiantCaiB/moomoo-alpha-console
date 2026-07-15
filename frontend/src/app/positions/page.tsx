@@ -10,6 +10,7 @@ import PriceDisplay from "@/components/shared/PriceDisplay";
 import StatusBadge from "@/components/shared/StatusBadge";
 import { getSourceBadge } from "@/lib/source_badge";
 import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
+import RunHistoryDrawer, { type RunHistoryItem } from "@/components/shared/RunHistoryDrawer";
 import type { PositionResponse, StrategyProfileResponse } from "@/lib/types";
 
 type PortfolioTab = "holdings" | "management";
@@ -249,6 +250,7 @@ export default function PositionsPage() {
   const holdPositions = useMemo(() => (positionSignals ?? []).filter((row) => row.signal === "HOLD"), [positionSignals]);
   const dataIssues = useMemo(() => (positionSignals ?? []).filter((row) => row.signal === "DATA_ERROR"), [positionSignals]);
   const hasRun = (positionSignals?.length ?? 0) > 0;
+  const currentDisplayedCount = positionSignals?.length ?? 0;
 
   const onRun = async () => {
     setRunMessage(null);
@@ -424,9 +426,9 @@ export default function PositionsPage() {
           </div>
 
           {latestGuidanceRun && (
-            <div className={`mb-4 px-4 py-3 rounded-xl border flex items-center gap-4 text-sm ${latestGuidanceRun.status === "FAILED" ? "border-accent-red/30 bg-accent-red/10 text-accent-red" : "border-surface-border bg-surface-hover/50 text-text-secondary"}`}>
+            <div className={`mb-4 px-4 py-3 rounded-xl border flex items-center gap-4 text-sm ${latestGuidanceRun.status === "FAILED" ? "border-accent-red/30 bg-accent-red/10 text-accent-red" : latestGuidanceRun.data_error_count > 0 ? "border-accent-amber/30 bg-accent-amber/10 text-accent-amber" : "border-accent-green/20 bg-accent-green/5 text-text-secondary"}`}>
               <div className="flex-1"><p className="font-medium text-text-primary">Last Guidance Run</p><p className="text-xs mt-1">{latestGuidanceRun.strategy_name} {latestGuidanceRun.strategy_version ?? ""} · {latestGuidanceRun.positions_scanned} positions · {latestGuidanceRun.signals_generated} signals · {latestGuidanceRun.data_error_count} data errors · {new Date(latestGuidanceRun.finished_at ?? latestGuidanceRun.created_at).toLocaleString()}</p>{latestGuidanceRun.status === "FAILED" && <p className="mt-1 font-medium">Run failed: {latestGuidanceRun.error_message ?? "Unknown error"}</p>}</div>
-              <span className="font-mono text-xs">{latestGuidanceRun.status}</span>
+              <StatusBadge status={latestGuidanceRun.status === "COMPLETED" && latestGuidanceRun.data_error_count > 0 ? "COMPLETED_WITH_ERRORS" : latestGuidanceRun.status} />
               <button onClick={() => setShowRunHistory(true)} className="text-xs underline">View Run History</button>
             </div>
           )}
@@ -442,7 +444,7 @@ export default function PositionsPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <GlassyCard><div className="flex items-center justify-between"><div><p className="text-[11px] uppercase tracking-wider text-text-muted mb-1">Positions Checked</p><p className="text-2xl font-semibold font-mono text-text-primary">{stats.total}</p></div><Shield size={20} className="text-accent-blue/40" /></div></GlassyCard>
+            <GlassyCard><div className="flex items-center justify-between"><div><p className="text-[11px] uppercase tracking-wider text-text-muted mb-1">Positions Checked</p><p className="text-2xl font-semibold font-mono text-text-primary">{latestGuidanceRun?.positions_scanned ?? 0}</p><p className="mt-1 text-[11px] text-text-muted">Current holdings displayed: {currentDisplayedCount}</p></div><Shield size={20} className="text-accent-blue/40" /></div></GlassyCard>
             <GlassyCard><div className="flex items-center justify-between"><div><p className="text-[11px] uppercase tracking-wider text-text-muted mb-1">Action Alerts</p><p className="text-2xl font-semibold font-mono text-text-primary">{stats.actionAlerts}</p></div><Sparkles size={20} className="text-accent-purple/40" /></div></GlassyCard>
             <GlassyCard><div className="flex items-center justify-between"><div><p className="text-[11px] uppercase tracking-wider text-text-muted mb-1">Tail Positions</p><p className="text-2xl font-semibold font-mono text-text-primary">{stats.tailMode}</p></div><Shield size={20} className="text-accent-purple/40" /></div></GlassyCard>
             <GlassyCard><div className="flex items-center justify-between"><div><p className="text-[11px] uppercase tracking-wider text-text-muted mb-1">Data Issues</p><p className="text-2xl font-semibold font-mono text-text-primary">{stats.dataIssues}</p></div><AlertTriangle size={20} className="text-accent-red/40" /></div></GlassyCard>
@@ -472,12 +474,22 @@ export default function PositionsPage() {
         <StrategyRulesModal profile={rulesProfile} onClose={() => setRulesProfile(null)} />
       )}
       {showRunHistory && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={() => setShowRunHistory(false)}>
-          <div className="w-full max-w-md h-full bg-surface-primary border-l border-surface-border p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5"><h2 className="text-lg font-semibold">Guidance Run History</h2><button onClick={() => setShowRunHistory(false)} className="text-text-muted">Close</button></div>
-            <div className="space-y-2">{(guidanceRuns ?? []).map((run) => <div key={run.id} className="p-3 rounded-lg border border-surface-border bg-surface-hover/40"><div className="flex justify-between"><span className="font-medium">{run.status}</span><span className="font-mono text-xs text-text-muted">{run.id.slice(0, 8)}</span></div><p className="text-xs text-text-secondary mt-1">{run.strategy_name} {run.strategy_version ?? ""}</p><p className="text-xs text-text-muted mt-1">{run.positions_scanned} positions · {run.signals_generated} signals · {run.data_error_count} errors · {new Date(run.finished_at ?? run.created_at).toLocaleString()}</p>{run.error_message && <p className="text-xs text-accent-red mt-1">{run.error_message}</p>}</div>)}</div>
-          </div>
-        </div>
+        <RunHistoryDrawer
+          title="Guidance Run History"
+          runs={(guidanceRuns ?? []).map((run): RunHistoryItem => ({
+            id: run.id,
+            strategy_name: run.strategy_name,
+            strategy_version: run.strategy_version,
+            status: run.status,
+            scanned_count: run.positions_scanned,
+            generated_count: run.signals_generated,
+            data_error_count: run.data_error_count,
+            finished_at: run.finished_at,
+            created_at: run.created_at,
+            error_message: run.error_message,
+          }))}
+          onClose={() => setShowRunHistory(false)}
+        />
       )}
     </div>
   );
