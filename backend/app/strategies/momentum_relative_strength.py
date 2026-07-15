@@ -10,6 +10,7 @@ from app.api.dependencies import get_kline_service, get_price_resolver, get_runt
 from app.models.signal import Signal
 from app.models.signal_score import SignalScore
 from app.models.strategy_run import StrategyRun
+from app.models.entry_signal_run import EntrySignalRun
 from app.services.research.base import ScreenRequest
 from app.services.research.moomoo_momentum import MoomooMomentumResearchProvider
 from app.services.kline.symbol_map import normalize_symbol
@@ -62,6 +63,18 @@ async def run_momentum_screener(
 
     reg_defn = StrategyRegistry.get("entry", "momentum_relative_strength") if strategy_profile_id else None
     merged_params = parameters or (reg_defn.default_parameters if reg_defn else {})
+    started_at = datetime.now(timezone.utc)
+
+    entry_run = EntrySignalRun(
+        strategy_profile_id=strategy_profile_id,
+        strategy_name="momentum_relative_strength",
+        strategy_version=strategy_version,
+        status="RUNNING",
+        started_at=started_at,
+        parameters_snapshot_json=json.dumps(merged_params),
+    )
+    session.add(entry_run)
+    await session.flush()
 
     strategy_run = StrategyRun(
         strategy_name="momentum_relative_strength",
@@ -70,7 +83,7 @@ async def run_momentum_screener(
         signals_generated=0,
         data_error_count=0,
         data_source=runtime_state.signal_data_source,
-        started_at=datetime.now(timezone.utc),
+        started_at=started_at,
     )
     session.add(strategy_run)
     await session.flush()
@@ -83,6 +96,9 @@ async def run_momentum_screener(
             strategy_run.status = "FAILED"
             strategy_run.error = "SPY reference data unavailable"
             strategy_run.completed_at = datetime.now(timezone.utc)
+            entry_run.status = "FAILED"
+            entry_run.error_message = strategy_run.error
+            entry_run.finished_at = datetime.now(timezone.utc)
             await session.commit()
             return strategy_run
 
@@ -123,6 +139,7 @@ async def run_momentum_screener(
 
             signal = Signal(
                 strategy_run_id=strategy_run.id,
+                run_id=entry_run.id,
                 symbol=sig_dto.symbol,
                 verdict=sig_dto.verdict,
                 total_score=sig_dto.total_score,
@@ -174,11 +191,20 @@ async def run_momentum_screener(
         if error_count > 0:
             strategy_run.error = (strategy_run.error or "").rstrip("; ")
         strategy_run.completed_at = datetime.now(timezone.utc)
+        entry_run.symbols_scanned = len(sanitized_universe)
+        entry_run.signals_generated = strategy_run.signals_generated
+        entry_run.data_error_count = error_count
+        entry_run.status = "COMPLETED"
+        entry_run.error_message = strategy_run.error
+        entry_run.finished_at = strategy_run.completed_at
         await session.commit()
         logger.info("Screener complete: %d signals generated, %d data errors", strategy_run.signals_generated, error_count)
     except Exception as exc:
         strategy_run.status = "FAILED"
         strategy_run.error = str(exc)
+        entry_run.status = "FAILED"
+        entry_run.error_message = str(exc)
+        entry_run.finished_at = datetime.now(timezone.utc)
         await session.commit()
         logger.error("Screener failed: %s", exc)
 

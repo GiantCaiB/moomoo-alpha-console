@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
+from app.core.config import settings
 from app.models.app_setting import AppSetting
 from app.schemas.settings import TradingUniverseRequest, TradingUniverseResponse
 from app.services.settings.trading_universe import TradingUniverseResolver
@@ -31,25 +32,35 @@ async def save_trading_universe(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    result = await session.execute(
-        select(AppSetting).where(AppSetting.key == "trading_universe")
-    )
-    row = result.scalar_one_or_none()
-
-    if row is None:
-        row = AppSetting(
-            key="trading_universe",
-            value=json.dumps(deduped),
-            description="User-defined trading universe for screener and watchlist",
+    old_env = resolver.read_env_file()
+    old_symbols = resolver.get_default_symbols()
+    try:
+        resolver.write_env_symbols(deduped)
+        result = await session.execute(
+            select(AppSetting).where(AppSetting.key == "trading_universe")
         )
-        session.add(row)
-    else:
-        row.value = json.dumps(deduped)
-        row.description = "User-defined trading universe for screener and watchlist"
+        row = result.scalar_one_or_none()
 
-    await session.commit()
+        if row is None:
+            row = AppSetting(
+                key="trading_universe",
+                value=json.dumps(deduped),
+                description="User-defined trading universe for screener and watchlist",
+            )
+            session.add(row)
+        else:
+            row.value = json.dumps(deduped)
+            row.description = "User-defined trading universe for screener and watchlist"
 
-    return TradingUniverseResponse(symbols=deduped, source="database")
+        await session.commit()
+    except Exception as exc:
+        await session.rollback()
+        resolver.restore_env_file(old_env)
+        settings.universe_symbols = old_symbols
+        logger.exception("Failed to synchronize trading universe: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to save trading universe") from exc
+
+    return TradingUniverseResponse(symbols=deduped, source="default")
 
 
 @router.delete("/api/v1/settings/trading-universe")
@@ -61,4 +72,6 @@ async def delete_trading_universe(session: AsyncSession = Depends(get_session)):
     if row:
         await session.delete(row)
         await session.commit()
-    return {"success": True}
+    settings.universe_symbols = resolver.get_file_env_symbols()
+    state = await resolver.resolve(session)
+    return {"success": True, "symbols": state.symbols, "source": state.source}

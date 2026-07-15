@@ -15,6 +15,7 @@ services:
       - LOG_LEVEL=INFO
     volumes:
       - backend_data:/app/data
+      - ./backend/.env:/app/.env
     restart: unless-stopped
 
   frontend:

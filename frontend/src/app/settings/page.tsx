@@ -470,7 +470,7 @@ export default function SettingsPage() {
             )}
             {universeData?.source === "default" && symbols.length > 0 && (
               <div className="text-xs text-text-muted">
-                Source: environment defaults
+                Source: backend/.env
               </div>
             )}
             {universeData?.source === "database" && (

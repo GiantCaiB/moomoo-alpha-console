@@ -39,6 +39,23 @@ class SignalResponse(BaseModel):
     failed_filters: list[str] | None = None
     data_quality_status: str = "OK"
     calculated_score_before_filters: float | None = None
+    run_id: str | None = None
+
+
+class EntrySignalRunResponse(BaseModel):
+    id: str
+    strategy_profile_id: str | None
+    strategy_name: str
+    strategy_version: str | None
+    status: str
+    symbols_scanned: int
+    signals_generated: int
+    data_error_count: int
+    started_at: datetime
+    finished_at: datetime | None
+    error_message: str | None
+    parameters_snapshot_json: str | None
+    created_at: datetime
 
 
 class StaleSignalCountResponse(BaseModel):

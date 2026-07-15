@@ -106,6 +106,25 @@ export interface SignalResponse {
   failed_filters: string[] | null;
   data_quality_status: string;
   calculated_score_before_filters: number | null;
+  run_id: string | null;
+  strategy_profile_id: string | null;
+  strategy_version: string | null;
+}
+
+export interface EntrySignalRunResponse {
+  id: string;
+  strategy_profile_id: string | null;
+  strategy_name: string;
+  strategy_version: string | null;
+  status: string;
+  symbols_scanned: number;
+  signals_generated: number;
+  data_error_count: number;
+  started_at: string;
+  finished_at: string | null;
+  error_message: string | null;
+  parameters_snapshot_json: string | null;
+  created_at: string;
 }
 
 export interface PositionManagementSignalResponse {
@@ -137,9 +156,14 @@ export interface PositionManagementSignalResponse {
   is_real_market_data: boolean;
   generated_at: string;
   created_at: string;
+  run_id: string | null;
 }
 
 export interface PositionSignalRunResponse {
+  id: string | null;
+  strategy_profile_id: string | null;
+  strategy_name: string | null;
+  strategy_version: string | null;
   status: string;
   positions_scanned: number;
   signals_generated: number;
@@ -202,6 +226,7 @@ export interface RuntimeStatusResponse {
 export interface RunSignalsResponse {
   success: boolean;
   strategy_run_id: string;
+  run_id: string;
   provider: string;
   market_data_provider: string;
   data_source: string;
@@ -211,6 +236,25 @@ export interface RunSignalsResponse {
   data_error_count: number;
   status: string;
   error: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  parameters_snapshot_json: string | null;
+}
+
+export interface PositionGuidanceRunResponse {
+  id: string;
+  strategy_profile_id: string | null;
+  strategy_name: string;
+  strategy_version: string | null;
+  status: string;
+  positions_scanned: number;
+  signals_generated: number;
+  data_error_count: number;
+  started_at: string;
+  finished_at: string | null;
+  error_message: string | null;
+  parameters_snapshot_json: string | null;
+  created_at: string;
 }
 
 export interface StaleSignalCountResponse {

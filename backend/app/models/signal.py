@@ -10,6 +10,9 @@ class Signal(Base, UUIDMixin, TimestampMixin):
     strategy_run_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("strategy_runs.id"), nullable=True
     )
+    run_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("entry_signal_runs.id"), nullable=True, index=True
+    )
     symbol: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
     verdict: Mapped[str] = mapped_column(String(20), nullable=False)
     total_score: Mapped[float] = mapped_column(Float, nullable=False)

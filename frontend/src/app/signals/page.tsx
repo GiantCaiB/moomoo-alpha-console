@@ -11,7 +11,7 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import { useState, useMemo } from "react";
 import { Play, Info, ShieldBan, AlertTriangle, Trash2, BookOpen } from "lucide-react";
 import StrategyRulesModal from "@/components/shared/StrategyRulesModal";
-import type { StrategyProfileResponse, PriceFreshnessInfo } from "@/lib/types";
+import type { SignalResponse, StrategyProfileResponse, PriceFreshnessInfo } from "@/lib/types";
 
 const FILTER_LABELS: Record<string, string> = {
   "price_below_sma50": "Price below SMA50",
@@ -32,6 +32,7 @@ export default function SignalsPage() {
   } | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [rulesProfile, setRulesProfile] = useState<StrategyProfileResponse | null>(null);
+  const [showRunHistory, setShowRunHistory] = useState(false);
   const { health } = useBrokerHealth();
   const readOnly = isReadOnlyMode(health);
   const isMoomoo = health?.account_environment?.startsWith("moomoo") ?? false;
@@ -52,6 +53,12 @@ export default function SignalsPage() {
     queryFn: () => api.signals(),
     refetchInterval: 30000,
   });
+
+  const { data: signalRuns } = useQuery({
+    queryKey: ["signals", "runs"],
+    queryFn: () => api.signalRuns(10),
+  });
+  const latestRun = signalRuns?.[0];
 
   const { data: staleSummary } = useQuery({
     queryKey: ["signals", "stale-count"],
@@ -97,6 +104,7 @@ export default function SignalsPage() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["signals"] });
       queryClient.invalidateQueries({ queryKey: ["signals", "stale-count"] });
+      queryClient.invalidateQueries({ queryKey: ["signals", "runs"] });
       const parts: string[] = [];
       parts.push(`Status: ${result.status}`);
       if (result.signals_generated !== undefined) {
@@ -270,6 +278,24 @@ export default function SignalsPage() {
         </div>
       )}
 
+      {latestRun && (
+        <div className={`mb-4 px-4 py-3 rounded-xl border flex items-center gap-4 text-sm ${latestRun.status === "FAILED" ? "border-accent-red/30 bg-accent-red/10 text-accent-red" : "border-surface-border bg-surface-hover/50 text-text-secondary"}`}>
+          <div className="flex-1">
+            <p className="font-medium text-text-primary">Last Entry Signal Run</p>
+            <p className="text-xs mt-1">{latestRun.strategy_name} {latestRun.strategy_version ?? ""} · {latestRun.signals_generated} signals · {latestRun.data_error_count} data errors · {formatRunDate(latestRun.finished_at ?? latestRun.created_at)}</p>
+            {latestRun.status === "FAILED" && <p className="mt-1 font-medium">Run failed: {latestRun.error_message ?? "Unknown error"}</p>}
+          </div>
+          <span className="font-mono text-xs">{latestRun.status}</span>
+          <button onClick={() => setShowRunHistory(true)} className="text-xs underline">View Run History</button>
+        </div>
+      )}
+
+      {latestRun?.status === "FAILED" && signals && signals.length > 0 && (
+        <div className="mb-4 px-4 py-2 rounded-lg border border-accent-amber/30 bg-accent-amber/10 text-accent-amber text-xs">
+          Showing signals from a previous successful run. The latest run failed.
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4">
           {[1, 2, 3].map((i) => (
@@ -291,7 +317,7 @@ export default function SignalsPage() {
                   {buySignals.map((sig) => (
                     <SignalRow
                       key={sig.id}
-                      sig={sig}
+                       sig={sig}
                       isSelected={selectedSignal === sig.id}
                       onToggle={() =>
                         setSelectedSignal(
@@ -403,6 +429,14 @@ export default function SignalsPage() {
       {rulesProfile && (
         <StrategyRulesModal profile={rulesProfile} onClose={() => setRulesProfile(null)} />
       )}
+      {showRunHistory && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={() => setShowRunHistory(false)}>
+          <div className="w-full max-w-md h-full bg-surface-primary border-l border-surface-border p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5"><h2 className="text-lg font-semibold">Entry Signal Run History</h2><button onClick={() => setShowRunHistory(false)} className="text-text-muted">Close</button></div>
+            <div className="space-y-2">{(signalRuns ?? []).map((run) => <div key={run.id} className="p-3 rounded-lg border border-surface-border bg-surface-hover/40"><div className="flex justify-between"><span className="font-medium">{run.status}</span><span className="font-mono text-xs text-text-muted">{run.id.slice(0, 8)}</span></div><p className="text-xs text-text-secondary mt-1">{run.strategy_name} {run.strategy_version ?? ""}</p><p className="text-xs text-text-muted mt-1">{run.signals_generated} signals · {run.data_error_count} errors · {formatRunDate(run.finished_at ?? run.created_at)}</p>{run.error_message && <p className="text-xs text-accent-red mt-1">{run.error_message}</p>}</div>)}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -412,6 +446,10 @@ function computePriceDeltaPct(signalPrice: number | null, currentPrice: number |
   return ((currentPrice - signalPrice) / signalPrice) * 100;
 }
 
+function formatRunDate(value: string): string {
+  return new Date(value).toLocaleString();
+}
+
 function SignalRow({
   sig,
   isSelected,
@@ -419,7 +457,7 @@ function SignalRow({
   freshnessInfo,
   strategyParams,
 }: {
-  sig: any;
+  sig: SignalResponse;
   isSelected: boolean;
   onToggle: () => void;
   freshnessInfo?: PriceFreshnessInfo;
@@ -520,6 +558,11 @@ function SignalRow({
           )}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <p className="text-xs text-text-muted mb-1">Run</p>
+              <p className="font-mono text-sm">{sig.run_id ? sig.run_id.slice(0, 8) : "Legacy"}</p>
+              <p className="text-xs text-text-muted">{sig.strategy_name ?? "Unknown strategy"} · generated {formatRunDate(sig.generated_at ?? sig.created_at)}</p>
+            </div>
             <div>
               <p className="text-xs text-text-muted mb-1">Entry Range</p>
               <p className="font-mono text-sm">

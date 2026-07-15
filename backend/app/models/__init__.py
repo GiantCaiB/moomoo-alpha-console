@@ -15,6 +15,8 @@ from app.models.audit_log import AuditLog
 from app.models.position_lifecycle_state import PositionLifecycleState
 from app.models.position_management_signal import PositionManagementSignal
 from app.models.strategy_profile import StrategyProfile
+from app.models.entry_signal_run import EntrySignalRun
+from app.models.position_guidance_run import PositionGuidanceRun
 
 __all__ = [
     "Symbol",
@@ -34,4 +36,6 @@ __all__ = [
     "PositionLifecycleState",
     "PositionManagementSignal",
     "StrategyProfile",
+    "EntrySignalRun",
+    "PositionGuidanceRun",
 ]

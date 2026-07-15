@@ -1,14 +1,16 @@
 import json
 from collections import OrderedDict
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timezone
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.schemas.signal import SignalResponse, SignalScoreResponse, StaleSignalCountResponse
+from app.schemas.signal import EntrySignalRunResponse, SignalResponse, SignalScoreResponse, StaleSignalCountResponse
 from app.models.signal import Signal
 from app.models.strategy_profile import StrategyProfile
 from app.models.signal_score import SignalScore
+from app.models.entry_signal_run import EntrySignalRun
 from app.db.session import get_session
 from app.api.dependencies import get_price_resolver, get_runtime_state
 from app.strategies.momentum_relative_strength import run_momentum_screener
@@ -106,6 +108,7 @@ async def list_signals(
             failed_filters=failed_filters_list,
             data_quality_status=sig.data_quality_status,
             calculated_score_before_filters=sig.calculated_score_before_filters,
+            run_id=sig.run_id,
         ))
     return responses
 
@@ -125,6 +128,16 @@ async def run_signals(
         )
         profile = result.scalar_one_or_none()
         if profile is None:
+            failed_run = EntrySignalRun(
+                strategy_name="momentum_relative_strength",
+                status="FAILED",
+                started_at=datetime.now(timezone.utc),
+                finished_at=datetime.now(timezone.utc),
+                error_message=f"Strategy profile {req.strategy_profile_id} not found",
+                parameters_snapshot_json=json.dumps({}),
+            )
+            session.add(failed_run)
+            await session.commit()
             return {"success": False, "error": f"Strategy profile {req.strategy_profile_id} not found"}
         strategy_profile_id = profile.id
         strategy_version = profile.version
@@ -153,7 +166,42 @@ async def run_signals(
         "status": strategy_run.status,
         "error": strategy_run.error,
         "spy_reference": getattr(strategy_run, "spy_reference", None),
+        "run_id": (await _latest_entry_run(session, strategy_run.id)).id,
     }
+
+
+@router.get("/api/v1/signals/runs", response_model=list[EntrySignalRunResponse])
+async def list_signal_runs(
+    limit: int = 10,
+    session: AsyncSession = Depends(get_session),
+):
+    result = await session.execute(
+        select(EntrySignalRun).order_by(EntrySignalRun.created_at.desc()).limit(max(1, min(limit, 100)))
+    )
+    return result.scalars().all()
+
+
+@router.get("/api/v1/signals/runs/{run_id}", response_model=EntrySignalRunResponse)
+async def get_signal_run(run_id: str, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(EntrySignalRun).where(EntrySignalRun.id == run_id))
+    run = result.scalar_one_or_none()
+    if run is None:
+        raise HTTPException(status_code=404, detail="Entry Signal run not found")
+    return run
+
+
+async def _latest_entry_run(session: AsyncSession, strategy_run_id: str) -> EntrySignalRun:
+    result = await session.execute(
+        select(EntrySignalRun)
+        .join(Signal, Signal.run_id == EntrySignalRun.id)
+        .where(Signal.strategy_run_id == strategy_run_id)
+        .order_by(EntrySignalRun.created_at.desc())
+    )
+    run = result.scalars().first()
+    if run is not None:
+        return run
+    result = await session.execute(select(EntrySignalRun).order_by(EntrySignalRun.created_at.desc()))
+    return result.scalars().first()
 
 
 @router.post("/api/v1/signals/current-prices")

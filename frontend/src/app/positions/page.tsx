@@ -119,6 +119,8 @@ function SignalSection({
                     <p><span className="text-text-muted">Price source:</span> {row.price_source}</p>
                     <p><span className="text-text-muted">Bar source:</span> {row.bar_source}</p>
                     <p><span className="text-text-muted">Generated at:</span> {new Date(row.generated_at).toLocaleString()}</p>
+                    <p><span className="text-text-muted">Run ID:</span> <span className="font-mono">{row.run_id ? row.run_id.slice(0, 8) : "Legacy"}</span></p>
+                    <p><span className="text-text-muted">Strategy version:</span> {row.strategy_version ?? "--"}</p>
                   </div>
                   <div className="md:col-span-2 text-xs text-text-muted border-t border-surface-border/50 pt-3">
                     {row.signal === "ENTER_TAIL_MODE" && (
@@ -163,6 +165,7 @@ export default function PositionsPage() {
   const [runError, setRunError] = useState<string | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [rulesProfile, setRulesProfile] = useState<StrategyProfileResponse | null>(null);
+  const [showRunHistory, setShowRunHistory] = useState(false);
 
   type SortKey = "symbol" | "status" | "quantity" | "avg_cost" | "current_price" | "market_value" | "unrealized_pnl" | "day_pnl" | "stop_level" | "weight";
   const [sortKey, setSortKey] = useState<SortKey>("symbol");
@@ -184,6 +187,12 @@ export default function PositionsPage() {
     queryKey: ["position-signals"],
     queryFn: () => api.positionSignals(),
   });
+
+  const { data: guidanceRuns } = useQuery({
+    queryKey: ["position-signals", "runs"],
+    queryFn: () => api.positionSignalRuns(10),
+  });
+  const latestGuidanceRun = guidanceRuns?.[0];
 
   const activePositions = positions?.filter((p) => (p.quantity ?? 0) > 0) ?? [];
 
@@ -248,10 +257,12 @@ export default function PositionsPage() {
       const result = await api.runPositionSignals(activeProfileId ?? undefined);
       if (result.status === "FAILED") {
         setRunError(result.error ?? "Position guidance run failed");
+        await queryClient.invalidateQueries({ queryKey: ["position-signals", "runs"] });
         return;
       }
       setRunMessage(`Run completed: ${result.signals_generated} signals, ${result.data_error_count} data errors`);
       await queryClient.invalidateQueries({ queryKey: ["position-signals"] });
+      await queryClient.invalidateQueries({ queryKey: ["position-signals", "runs"] });
     } catch (err) {
       setRunError(err instanceof Error ? err.message : "Network error");
     }
@@ -412,6 +423,15 @@ export default function PositionsPage() {
             Guidance only. No trades are placed. Manage orders manually in moomoo.
           </div>
 
+          {latestGuidanceRun && (
+            <div className={`mb-4 px-4 py-3 rounded-xl border flex items-center gap-4 text-sm ${latestGuidanceRun.status === "FAILED" ? "border-accent-red/30 bg-accent-red/10 text-accent-red" : "border-surface-border bg-surface-hover/50 text-text-secondary"}`}>
+              <div className="flex-1"><p className="font-medium text-text-primary">Last Guidance Run</p><p className="text-xs mt-1">{latestGuidanceRun.strategy_name} {latestGuidanceRun.strategy_version ?? ""} · {latestGuidanceRun.positions_scanned} positions · {latestGuidanceRun.signals_generated} signals · {latestGuidanceRun.data_error_count} data errors · {new Date(latestGuidanceRun.finished_at ?? latestGuidanceRun.created_at).toLocaleString()}</p>{latestGuidanceRun.status === "FAILED" && <p className="mt-1 font-medium">Run failed: {latestGuidanceRun.error_message ?? "Unknown error"}</p>}</div>
+              <span className="font-mono text-xs">{latestGuidanceRun.status}</span>
+              <button onClick={() => setShowRunHistory(true)} className="text-xs underline">View Run History</button>
+            </div>
+          )}
+          {latestGuidanceRun?.status === "FAILED" && positionSignals && positionSignals.length > 0 && <div className="mb-4 px-4 py-2 rounded-lg border border-accent-amber/30 bg-accent-amber/10 text-accent-amber text-xs">Showing guidance from a previous successful run. The latest run failed.</div>}
+
           {runMessage && <div className="text-sm text-text-secondary font-mono">{runMessage}</div>}
           {runError && (
             <div className="px-4 py-3 rounded-xl border border-accent-red/25 bg-accent-red/10 text-sm text-accent-red flex items-center gap-2">
@@ -450,6 +470,14 @@ export default function PositionsPage() {
 
       {rulesProfile && (
         <StrategyRulesModal profile={rulesProfile} onClose={() => setRulesProfile(null)} />
+      )}
+      {showRunHistory && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex justify-end" onClick={() => setShowRunHistory(false)}>
+          <div className="w-full max-w-md h-full bg-surface-primary border-l border-surface-border p-5 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5"><h2 className="text-lg font-semibold">Guidance Run History</h2><button onClick={() => setShowRunHistory(false)} className="text-text-muted">Close</button></div>
+            <div className="space-y-2">{(guidanceRuns ?? []).map((run) => <div key={run.id} className="p-3 rounded-lg border border-surface-border bg-surface-hover/40"><div className="flex justify-between"><span className="font-medium">{run.status}</span><span className="font-mono text-xs text-text-muted">{run.id.slice(0, 8)}</span></div><p className="text-xs text-text-secondary mt-1">{run.strategy_name} {run.strategy_version ?? ""}</p><p className="text-xs text-text-muted mt-1">{run.positions_scanned} positions · {run.signals_generated} signals · {run.data_error_count} errors · {new Date(run.finished_at ?? run.created_at).toLocaleString()}</p>{run.error_message && <p className="text-xs text-accent-red mt-1">{run.error_message}</p>}</div>)}</div>
+          </div>
+        </div>
       )}
     </div>
   );

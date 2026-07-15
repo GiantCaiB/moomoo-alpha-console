@@ -1,8 +1,9 @@
 import json
 import logging
+from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel
 
 from app.api.dependencies import get_broker, get_kline_service, get_price_resolver
@@ -10,7 +11,8 @@ from app.db.session import get_session
 from app.models.position_lifecycle_state import PositionLifecycleState
 from app.models.position_management_signal import PositionManagementSignal
 from app.models.strategy_profile import StrategyProfile
-from app.schemas.position_management import PositionManagementSignalResponse, PositionSignalRunResponse
+from app.models.position_guidance_run import PositionGuidanceRun
+from app.schemas.position_management import PositionGuidanceRunResponse, PositionManagementSignalResponse, PositionSignalRunResponse
 from app.services.position_management.profit_tail import ProfitTailStrategyService
 
 logger = logging.getLogger(__name__)
@@ -54,23 +56,42 @@ async def run_position_signals(
     strategy_version = None
     parameters = None
 
+    run = PositionGuidanceRun(
+        strategy_name="profit_tail_loss_defense",
+        status="RUNNING",
+        started_at=datetime.now(timezone.utc),
+    )
+    session.add(run)
+    await session.flush()
+
     if req and req.strategy_profile_id:
         result = await session.execute(
             select(StrategyProfile).where(StrategyProfile.id == req.strategy_profile_id)
         )
         profile = result.scalar_one_or_none()
         if profile is None:
+            run.status = "FAILED"
+            run.error_message = f"Strategy profile {req.strategy_profile_id} not found"
+            run.finished_at = datetime.now(timezone.utc)
+            await session.commit()
             return PositionSignalRunResponse(
+                id=run.id,
                 status="FAILED",
                 positions_scanned=0,
                 signals_generated=0,
                 data_error_count=0,
                 read_only=True,
                 error=f"Strategy profile {req.strategy_profile_id} not found",
+                started_at=run.started_at,
+                finished_at=run.finished_at,
             )
         strategy_profile_id = profile.id
         strategy_version = profile.version
         parameters = json.loads(profile.parameters_json) if profile.parameters_json else {}
+        run.strategy_profile_id = profile.id
+        run.strategy_version = profile.version
+
+    run.parameters_snapshot_json = json.dumps(parameters or {})
 
     service = _service(
         strategy_profile_id=strategy_profile_id,
@@ -78,19 +99,46 @@ async def run_position_signals(
         parameters=parameters,
     )
     try:
-        _, summary = await service.run(session)
+        _, summary = await service.run(session, run)
         return PositionSignalRunResponse(**summary)
     except Exception as exc:
         logger.exception("Position guidance run failed: %s", exc)
         await session.rollback()
+        run.status = "FAILED"
+        run.error_message = f"Position guidance run failed: {exc}"
+        run.finished_at = datetime.now(timezone.utc)
+        session.add(run)
+        await session.commit()
         return PositionSignalRunResponse(
+            id=run.id,
             status="FAILED",
             positions_scanned=0,
             signals_generated=0,
             data_error_count=0,
             read_only=True,
             error=f"Position guidance run failed: {exc}",
+            started_at=run.started_at,
+            finished_at=run.finished_at,
         )
+
+
+@router.get("/api/v1/position-signals/runs", response_model=list[PositionGuidanceRunResponse])
+async def list_position_guidance_runs(limit: int = 10, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(
+        select(PositionGuidanceRun)
+        .order_by(PositionGuidanceRun.created_at.desc())
+        .limit(max(1, min(limit, 100)))
+    )
+    return result.scalars().all()
+
+
+@router.get("/api/v1/position-signals/runs/{run_id}", response_model=PositionGuidanceRunResponse)
+async def get_position_guidance_run(run_id: str, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(PositionGuidanceRun).where(PositionGuidanceRun.id == run_id))
+    run = result.scalar_one_or_none()
+    if run is None:
+        raise HTTPException(status_code=404, detail="Position Guidance run not found")
+    return run
 
 
 @router.get("/api/v1/position-signals", response_model=list[PositionManagementSignalResponse])
@@ -146,6 +194,9 @@ async def list_position_signals(
                 is_real_market_data=row.is_real_market_data,
                 generated_at=row.generated_at,
                 created_at=row.generated_at,
+                run_id=row.run_id,
+                strategy_profile_id=row.strategy_profile_id,
+                strategy_version=row.strategy_version,
             )
         )
     return responses

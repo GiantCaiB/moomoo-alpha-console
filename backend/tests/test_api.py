@@ -11,6 +11,7 @@ from sqlalchemy import select
 from app.models.order import Order
 from app.models.signal import Signal
 from app.models.strategy_run import StrategyRun
+from app.models.entry_signal_run import EntrySignalRun
 from app.models.app_setting import AppSetting
 from sqlalchemy import delete as sa_delete
 
@@ -181,6 +182,7 @@ async def test_cancel_order_blocked_in_read_only(client):
 async def test_signals_excludes_local_in_moomoo_mode(client, monkeypatch):
     """In moomoo mode, GET /signals should exclude local_generated signals by default."""
     monkeypatch.setattr(settings, "broker_mode", "moomoo")
+    monkeypatch.setattr(settings, "universe_symbols", [])
     await init_db()
     factory = create_session_factory()
     now = datetime.now(timezone.utc)
@@ -314,6 +316,7 @@ async def test_delete_stale_signals(client):
 
 @pytest.mark.asyncio
 async def test_stale_signal_count_detects_local_mock_and_out_of_universe(client, monkeypatch):
+    monkeypatch.setattr(settings, "universe_symbols", [])
     monkeypatch.setattr(settings, "broker_mode", "moomoo")
     await init_db()
     factory = create_session_factory()
@@ -385,6 +388,7 @@ async def test_stale_signal_count_detects_local_mock_and_out_of_universe(client,
 
 @pytest.mark.asyncio
 async def test_stale_signal_count_does_not_count_current_universe_real_rows(client, monkeypatch):
+    monkeypatch.setattr(settings, "universe_symbols", [])
     monkeypatch.setattr(settings, "broker_mode", "moomoo")
     await init_db()
     factory = create_session_factory()
@@ -510,6 +514,11 @@ async def test_run_signals_response_enriched(client, monkeypatch):
     """POST /signals/run response includes provider, data_source, universe_source, etc."""
     monkeypatch.setattr(settings, "broker_mode", "mock")
     await init_db()
+    factory = create_session_factory()
+    async with factory() as session:
+        await session.execute(sa_delete(Signal))
+        await session.execute(sa_delete(EntrySignalRun))
+        await session.commit()
     resp = await client.post("/api/v1/signals/run")
     assert resp.status_code == 200
     data = resp.json()
@@ -523,6 +532,43 @@ async def test_run_signals_response_enriched(client, monkeypatch):
     assert "signals_generated" in data
     assert "data_error_count" in data
     assert "status" in data
+    assert "run_id" in data
+    run_resp = await client.get(f"/api/v1/signals/runs/{data['run_id']}")
+    assert run_resp.status_code == 200
+    assert run_resp.json()["id"] == data["run_id"]
+    signals_resp = await client.get("/api/v1/signals", params={"include_history": "true", "include_local": "true"})
+    assert all(row["run_id"] == data["run_id"] for row in signals_resp.json())
+
+
+@pytest.mark.asyncio
+async def test_entry_signal_failed_run_is_persisted(client):
+    await init_db()
+    response = await client.post("/api/v1/signals/run", json={"strategy_profile_id": "missing-profile"})
+    assert response.status_code == 200
+    assert response.json()["success"] is False
+    factory = create_session_factory()
+    async with factory() as session:
+        result = await session.execute(
+            select(EntrySignalRun).order_by(EntrySignalRun.created_at.desc())
+        )
+        run = result.scalars().first()
+        assert run is not None
+        assert run.status == "FAILED"
+        assert run.error_message
+
+
+@pytest.mark.asyncio
+async def test_entry_signal_run_list_honors_limit_and_order(client, monkeypatch):
+    monkeypatch.setattr(settings, "broker_mode", "mock")
+    await init_db()
+    first = (await client.post("/api/v1/signals/run")).json()["run_id"]
+    second = (await client.post("/api/v1/signals/run")).json()["run_id"]
+    response = await client.get("/api/v1/signals/runs", params={"limit": 2})
+    assert response.status_code == 200
+    runs = response.json()
+    assert len(runs) == 2
+    assert runs[0]["id"] == second
+    assert first in {run["id"] for run in runs}
 
 
 @pytest.mark.asyncio
@@ -539,6 +585,7 @@ async def test_moomoo_run_does_not_use_local_provider(client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_moomoo_run_does_not_generate_moomoo_symbol(client, monkeypatch):
+    monkeypatch.setattr(settings, "universe_symbols", [])
     """broker_mode=moomoo must not generate signals for invalid broker labels like MOOMOO."""
     monkeypatch.setattr(settings, "broker_mode", "moomoo")
     await init_db()
@@ -567,6 +614,7 @@ async def test_moomoo_run_does_not_generate_moomoo_symbol(client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_moomoo_excludes_nonreal_outofuniverse_haserror(client, monkeypatch):
+    monkeypatch.setattr(settings, "universe_symbols", [])
     """Moomoo GET /signals filters out non-real, out-of-universe, and has_error signals."""
     monkeypatch.setattr(settings, "broker_mode", "moomoo")
     await init_db()
@@ -838,6 +886,7 @@ async def test_market_data_status_includes_spy_after_diagnostics(client):
 
 @pytest.mark.asyncio
 async def test_delete_stale_preserves_valid_moomoo_signals(client, monkeypatch):
+    monkeypatch.setattr(settings, "universe_symbols", [])
     """DELETE /stale must NOT remove valid moomoo real signals inside the trading universe."""
     monkeypatch.setattr(settings, "broker_mode", "moomoo")
     await init_db()

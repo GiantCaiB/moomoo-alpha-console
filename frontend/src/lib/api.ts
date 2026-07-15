@@ -13,8 +13,10 @@ import type {
   TradingUniverseResponse,
   RuntimeStatusResponse,
   RunSignalsResponse,
+  EntrySignalRunResponse,
   StaleSignalCountResponse,
   PositionSignalRunResponse,
+  PositionGuidanceRunResponse,
   DeleteStalePositionSignalsResponse,
   MarketDataStatusResponse,
   StrategyProfileResponse,
@@ -70,10 +72,19 @@ export const api = {
       body: JSON.stringify({ order_id }),
     }),
 
-  signals: (includeLocal?: boolean) => {
-    const params = includeLocal ? "?include_local=true" : "";
-    return fetcher<SignalResponse[]>(`/api/v1/signals${params}`);
+  signals: (includeLocal?: boolean, includeHistory?: boolean) => {
+    const params = new URLSearchParams();
+    if (includeLocal) params.set("include_local", "true");
+    if (includeHistory) params.set("include_history", "true");
+    const qs = params.toString();
+    return fetcher<SignalResponse[]>(`/api/v1/signals${qs ? "?" + qs : ""}`);
   },
+
+  signalRuns: (limit = 10) =>
+    fetcher<EntrySignalRunResponse[]>(`/api/v1/signals/runs?limit=${limit}`),
+
+  signalRun: (runId: string) =>
+    fetcher<EntrySignalRunResponse>(`/api/v1/signals/runs/${runId}`),
 
   runSignals: (strategyProfileId?: string) =>
     fetcher<RunSignalsResponse>("/api/v1/signals/run", {
@@ -137,6 +148,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ symbols }),
     }),
+
+  positionSignalRuns: (limit = 10) =>
+    fetcher<PositionGuidanceRunResponse[]>(`/api/v1/position-signals/runs?limit=${limit}`),
+
+  positionSignalRun: (runId: string) =>
+    fetcher<PositionGuidanceRunResponse>(`/api/v1/position-signals/runs/${runId}`),
 
   tradingUniverse: () =>
     fetcher<TradingUniverseResponse>("/api/v1/settings/trading-universe"),

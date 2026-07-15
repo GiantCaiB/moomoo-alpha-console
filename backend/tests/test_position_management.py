@@ -9,6 +9,7 @@ from sqlalchemy import delete as sa_delete
 from app.db.session import init_db
 from app.models.position_lifecycle_state import PositionLifecycleState
 from app.models.position_management_signal import PositionManagementSignal
+from app.models.position_guidance_run import PositionGuidanceRun
 from app.services.broker.base import PositionDto, QuoteDto
 
 
@@ -207,9 +208,17 @@ async def test_position_signals_gain_thresholds(position_signals_client, api_bro
     assert data["positions_scanned"] == 1
     assert data["signals_generated"] == 1
     assert data["data_error_count"] == 0
+    assert data["id"]
+
+    run_rows = (await position_signals_client.get("/api/v1/position-signals/runs", params={"limit": 1})).json()
+    assert run_rows[0]["id"] == data["id"]
+    detail = await position_signals_client.get(f"/api/v1/position-signals/runs/{data['id']}")
+    assert detail.status_code == 200
+    assert detail.json()["status"] == "COMPLETED"
 
     rows = (await position_signals_client.get("/api/v1/position-signals")).json()
     row = rows[0]
+    assert row["run_id"] == data["id"]
     assert row["symbol"] == "META"
     assert row["signal"] == expected_signal
     if expected_trim_pct is None:
@@ -411,10 +420,30 @@ async def test_position_signals_data_errors_and_skip_zero_qty(position_signals_c
     assert data["positions_scanned"] == 1
     assert data["signals_generated"] == 1
     assert data["data_error_count"] == 1
+    assert data["status"] == "COMPLETED"
     rows = (await position_signals_client.get("/api/v1/position-signals")).json()
     assert len(rows) == 1
     assert rows[0]["symbol"] == "MSFT"
     assert rows[0]["signal"] == "DATA_ERROR"
+    assert rows[0]["run_id"] == data["id"]
+
+
+@pytest.mark.asyncio
+async def test_position_guidance_failed_run_is_persisted(position_signals_client, api_broker):
+    await init_db()
+
+    async def fail_get_positions():
+        raise RuntimeError("broker unavailable")
+
+    api_broker.get_positions = fail_get_positions
+    response = await position_signals_client.post("/api/v1/position-signals/run")
+    assert response.status_code == 200
+    assert response.json()["status"] == "FAILED"
+    run_id = response.json()["id"]
+    detail = await position_signals_client.get(f"/api/v1/position-signals/runs/{run_id}")
+    assert detail.status_code == 200
+    assert detail.json()["status"] == "FAILED"
+    assert "broker unavailable" in detail.json()["error_message"]
 
 
 @pytest.mark.asyncio
@@ -1097,6 +1126,7 @@ async def test_get_position_signals_api_include_inactive_returns_all(position_si
     assert "ZXCV" in symbols, "ZXCV should appear when include_inactive=true"
     assert "AAPL" in symbols
     assert "MSFT" in symbols
+    assert all(row["run_id"] is None for row in data)
 
 
 @pytest.mark.asyncio

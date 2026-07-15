@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.position_lifecycle_state import PositionLifecycleState
 from app.models.position_management_signal import PositionManagementSignal
+from app.models.position_guidance_run import PositionGuidanceRun
 import json
 from app.services.broker.base import BrokerAdapter
 from app.services.kline.service import KLineService
@@ -51,6 +52,7 @@ class ProfitTailSignalResult:
     strategy_profile_id: str | None = None
     strategy_version: str | None = None
     parameters_snapshot_json: str | None = None
+    run_id: str | None = None
 
 
 @dataclass
@@ -122,9 +124,27 @@ class ProfitTailStrategyService:
             return json.dumps(self._parameters)
         return None
 
-    async def run(self, session: AsyncSession) -> tuple[list[ProfitTailSignalResult], dict]:
-        positions = await self._broker.get_positions()
-        active_positions = [position for position in positions if (position.quantity or 0) > 0]
+    async def run(self, session: AsyncSession, run: PositionGuidanceRun | None = None) -> tuple[list[ProfitTailSignalResult], dict]:
+        if run is None:
+            run = PositionGuidanceRun(
+                strategy_profile_id=self._strategy_profile_id,
+                strategy_name="profit_tail_loss_defense",
+                strategy_version=self._strategy_version,
+                status="RUNNING",
+                started_at=datetime.now(timezone.utc),
+                parameters_snapshot_json=self._make_parameters_snapshot() or json.dumps({}),
+            )
+            session.add(run)
+            await session.flush()
+        try:
+            positions = await self._broker.get_positions()
+            active_positions = [position for position in positions if (position.quantity or 0) > 0]
+        except Exception as exc:
+            run.status = "FAILED"
+            run.error_message = str(exc)
+            run.finished_at = datetime.now(timezone.utc)
+            await session.commit()
+            raise
 
         results: list[ProfitTailSignalResult] = []
         data_error_count = 0
@@ -137,7 +157,7 @@ class ProfitTailStrategyService:
                 if signal.signal == "DATA_ERROR":
                     data_error_count += 1
                 snapshot.state.highest_price_since_entry = snapshot.eval_state.highest_price_since_entry
-                await self._persist_signal(session, signal, snapshot.state)
+                await self._persist_signal(session, signal, snapshot.state, run.id)
             except Exception as exc:
                 logger.exception("Position guidance error for %s: %s", position.symbol, exc)
                 error_signal = self._data_error(
@@ -151,17 +171,30 @@ class ProfitTailStrategyService:
                 data_error_count += 1
                 try:
                     res = await self._load_or_create_state(session, position.symbol, position.quantity, position.avg_cost)
-                    await self._persist_signal(session, error_signal, res.state)
+                    await self._persist_signal(session, error_signal, res.state, run.id)
                 except Exception as persist_exc:
                     logger.warning("Could not persist DATA_ERROR signal for %s: %s", position.symbol, persist_exc)
 
         await session.commit()
+        run.positions_scanned = len(active_positions)
+        run.signals_generated = len(results)
+        run.data_error_count = data_error_count
+        run.status = "COMPLETED"
+        run.finished_at = datetime.now(timezone.utc)
+        await session.commit()
         summary = {
+            "id": run.id,
+            "strategy_profile_id": run.strategy_profile_id,
+            "strategy_name": run.strategy_name,
+            "strategy_version": run.strategy_version,
             "status": "COMPLETED",
             "positions_scanned": len(active_positions),
             "signals_generated": len(results),
             "data_error_count": data_error_count,
             "read_only": True,
+            "started_at": run.started_at,
+            "finished_at": run.finished_at,
+            "parameters_snapshot_json": run.parameters_snapshot_json,
         }
         return results, summary
 
@@ -382,9 +415,10 @@ class ProfitTailStrategyService:
             parameters_snapshot_json=self._make_parameters_snapshot(),
         )
 
-    async def _persist_signal(self, session: AsyncSession, signal: ProfitTailSignalResult, state: PositionLifecycleState) -> None:
+    async def _persist_signal(self, session: AsyncSession, signal: ProfitTailSignalResult, state: PositionLifecycleState, run_id: str) -> None:
         session.add(
             PositionManagementSignal(
+                run_id=run_id,
                 symbol=signal.symbol,
                 signal=signal.signal,
                 reason=signal.reason,
@@ -531,4 +565,5 @@ class ProfitTailStrategyService:
             strategy_profile_id=row.strategy_profile_id,
             strategy_version=row.strategy_version,
             parameters_snapshot_json=row.parameters_snapshot_json,
+            run_id=row.run_id,
         )

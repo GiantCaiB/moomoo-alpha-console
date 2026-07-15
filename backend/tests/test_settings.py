@@ -6,10 +6,21 @@ from app.core.config import Settings
 from app.db.session import init_db
 from app.models.app_setting import AppSetting
 from app.core.config import settings
+from app.services.settings import trading_universe as trading_universe_module
 
 
 @pytest.fixture
-def client(api_app):
+def env_file(tmp_path, monkeypatch):
+    path = tmp_path / ".env"
+    path.write_text('UNIVERSE_SYMBOLS=["QQQM","META","AMZN"]\n', encoding="utf-8")
+    previous_symbols = list(settings.universe_symbols)
+    monkeypatch.setattr(trading_universe_module, "BACKEND_ENV_FILE", path)
+    yield path
+    settings.universe_symbols = previous_symbols
+
+
+@pytest.fixture
+def client(api_app, env_file):
     transport = ASGITransport(app=api_app)
     return AsyncClient(transport=transport, base_url="http://test")
 
@@ -65,11 +76,11 @@ async def test_put_trading_universe_normalizes_symbols(client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["symbols"] == ["AAPL", "MSFT", "NVDA"]
-    assert data["source"] == "database"
+    assert data["source"] == "default"
 
 
 @pytest.mark.asyncio
-async def test_put_trading_universe_persists(client):
+async def test_put_trading_universe_persists_to_env_and_database(client, env_file):
     await init_db()
     resp = await client.put("/api/v1/settings/trading-universe", json={
         "symbols": ["AAPL", "GOOGL", "TSLA"],
@@ -79,7 +90,17 @@ async def test_put_trading_universe_persists(client):
     resp2 = await client.get("/api/v1/settings/trading-universe")
     data = resp2.json()
     assert data["symbols"] == ["AAPL", "GOOGL", "TSLA"]
-    assert data["source"] == "database"
+    assert data["source"] == "default"
+    assert 'UNIVERSE_SYMBOLS=["AAPL","GOOGL","TSLA"]' in env_file.read_text(encoding="utf-8")
+
+    from app.db.session import create_session_factory
+    from sqlalchemy import select
+
+    factory = create_session_factory()
+    async with factory() as session:
+        result = await session.execute(select(AppSetting).where(AppSetting.key == "trading_universe"))
+        row = result.scalar_one()
+        assert row.value == '["AAPL", "GOOGL", "TSLA"]'
 
 
 @pytest.mark.asyncio
@@ -116,4 +137,4 @@ async def test_delete_trading_universe_resets_to_default(client):
     data2 = resp2.json()
     assert data2["source"] == "default"
     assert len(data2["symbols"]) > 0
-    assert "CUSTOM1" not in data2["symbols"]
+    assert data2["symbols"] == ["CUSTOM1", "CUSTOM2"]

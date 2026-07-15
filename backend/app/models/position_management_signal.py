@@ -9,6 +9,10 @@ from app.db.base import Base, UUIDMixin, TimestampMixin
 class PositionManagementSignal(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "position_management_signals"
 
+    run_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("position_guidance_runs.id"), nullable=True, index=True
+    )
+
     symbol: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
     signal: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)

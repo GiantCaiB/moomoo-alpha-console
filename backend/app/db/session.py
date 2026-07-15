@@ -69,6 +69,8 @@ async def init_db() -> None:
         SignalScore,
         StrategyProfile,
         StrategyRun,
+        EntrySignalRun,
+        PositionGuidanceRun,
         Symbol,
         TradeJournalEntry,
         WatchlistItem,
@@ -78,8 +80,10 @@ async def init_db() -> None:
         await conn.run_sync(Base.metadata.create_all)
         await conn.run_sync(_run_migrations)
 
-MIGRATIONS: list[tuple[str, str]] = [
+MIGRATIONS: list[tuple[str, str, str]] = [
     ("signals", "price_as_of", "VARCHAR(30)"),
+    ("signals", "run_id", "VARCHAR(36)"),
+    ("position_management_signals", "run_id", "VARCHAR(36)"),
 ]
 
 

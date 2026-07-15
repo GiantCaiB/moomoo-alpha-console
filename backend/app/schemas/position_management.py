@@ -32,12 +32,38 @@ class PositionManagementSignalResponse(BaseModel):
     is_real_market_data: bool
     generated_at: datetime
     created_at: datetime
+    run_id: str | None = None
+    strategy_profile_id: str | None = None
+    strategy_version: str | None = None
 
 
 class PositionSignalRunResponse(BaseModel):
+    id: str | None = None
+    strategy_profile_id: str | None = None
+    strategy_name: str | None = None
+    strategy_version: str | None = None
     status: str
     positions_scanned: int
     signals_generated: int
     data_error_count: int
     read_only: bool
     error: str | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    parameters_snapshot_json: str | None = None
+
+
+class PositionGuidanceRunResponse(BaseModel):
+    id: str
+    strategy_profile_id: str | None
+    strategy_name: str
+    strategy_version: str | None
+    status: str
+    positions_scanned: int
+    signals_generated: int
+    data_error_count: int
+    started_at: datetime
+    finished_at: datetime | None
+    error_message: str | None
+    parameters_snapshot_json: str | None
+    created_at: datetime
