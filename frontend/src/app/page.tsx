@@ -26,6 +26,7 @@ import {
   FlaskConical,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { wsClient } from "@/lib/websocket";
 import type { PositionResponse } from "@/lib/types";
 
@@ -78,7 +79,7 @@ export default function Cockpit() {
     return () => wsClient.disconnect();
   }, []);
 
-  type SortKey = "symbol" | "quantity" | "avg_cost" | "current_price" | "market_value" | "unrealized_pnl" | "position_pct";
+  type SortKey = "symbol" | "quantity" | "avg_cost" | "current_price" | "market_value" | "unrealized_pnl" | "total_pnl" | "position_pct";
   const [sortKey, setSortKey] = useState<SortKey>("position_pct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -108,6 +109,7 @@ export default function Cockpit() {
     return Array.from(latestBySymbol.values());
   })();
   const openOrders = orders?.filter((o) => o.status === "PENDING" || o.status === "SUBMITTED") || [];
+  const displayedOpenOrders = openOrders.slice(0, 5);
   const positionAlerts = (positionSignals ?? []).filter(
     (sig) =>
       [
@@ -165,7 +167,7 @@ export default function Cockpit() {
     <div>
       {bannerData && (
         <div
-          className={`mb-4 px-4 py-2.5 rounded-lg border flex items-center gap-2 text-sm font-medium ${bannerData.className}`}
+          className={`mb-3 px-3.5 py-2 rounded-lg border flex items-center gap-2 text-xs font-medium ${bannerData.className}`}
         >
           <bannerData.icon size={18} />
           <span>{bannerData.text}</span>
@@ -176,7 +178,7 @@ export default function Cockpit() {
         <div>
           <h2 className="text-2xl font-semibold text-text-primary">Cockpit</h2>
           <p className="text-sm text-text-muted mt-1">
-            Account overview, active signals, position alerts, and risk status.
+            Account overview, active signals, position alerts, and risk status. · {isMoomooReal ? "Real Account" : isMoomooSim ? "Simulated Account" : isPaper ? "Paper Account" : "Mock Account"} · Read-only · {connected ? "Connected" : "Disconnected"}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -316,12 +318,17 @@ export default function Cockpit() {
         </GlassyCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] gap-6 mb-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] gap-x-6 gap-y-4 mb-6 items-start">
         <div className="order-1 lg:col-start-1 lg:row-start-1">
           <GlassyCard title="Entry Signal Highlights">
             {activeSignals.length === 0 ? (
-              <div className="py-8 text-center text-text-muted text-sm">
-                No entry alerts right now. Run Entry Screener to refresh new position ideas.
+              <div className="flex items-center justify-between gap-4 px-3 py-4 text-sm">
+                <p className="text-text-muted">
+                  No active entry alerts. Run Entry Screener to refresh new position ideas.
+                </p>
+                <Link href="/signals" className="shrink-0 text-xs font-medium text-accent-green hover:text-accent-green/80">
+                  Run Screener →
+                </Link>
               </div>
             ) : (
               <div className="space-y-2">
@@ -380,7 +387,7 @@ export default function Cockpit() {
               </p>
             ) : (
               <div className="space-y-2">
-                {openOrders.map((o) => (
+                {displayedOpenOrders.map((o) => (
                   <div
                     key={o.id}
                     className="flex items-center justify-between py-1.5"
@@ -400,6 +407,13 @@ export default function Cockpit() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            {openOrders.length > 5 && (
+              <div className="mt-3 border-t border-surface-border/60 pt-3 text-right">
+                <Link href="/orders" className="text-xs font-medium text-accent-blue hover:text-accent-blue/80">
+                  View all orders →
+                </Link>
               </div>
             )}
           </GlassyCard>
@@ -507,11 +521,12 @@ export default function Cockpit() {
               case "current_price": return pos.current_price ?? 0;
               case "market_value": return (pos.quantity ?? 0) * (pos.current_price ?? 0);
               case "unrealized_pnl": return pos.unrealized_pnl ?? 0;
+              case "total_pnl": return pos.total_pnl ?? 0;
               case "position_pct": return pos.position_pct ?? 0;
             }
           };
 
-          const sortedPositions = [...activePositions].sort((a, b) => {
+           const sortedPositions = [...activePositions].sort((a, b) => {
             const va = getSortValue(a, sortKey);
             const vb = getSortValue(b, sortKey);
             let cmp = 0;
@@ -521,7 +536,14 @@ export default function Cockpit() {
               cmp = (va as number) - (vb as number);
             }
             return sortDir === "asc" ? cmp : -cmp;
-          });
+           });
+
+           const topWeightedSymbols = new Set(
+             [...activePositions]
+               .sort((a, b) => (b.position_pct ?? 0) - (a.position_pct ?? 0))
+               .slice(0, 3)
+               .map((position) => position.symbol)
+           );
 
           const totalMktValue = activePositions.reduce(
             (s, p) => s + (p.quantity ?? 0) * (p.current_price ?? 0),
@@ -554,13 +576,14 @@ export default function Cockpit() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="tableHeader">
+                  <tr className="tableHeader bg-surface-hover/60">
                     {sortTh("Symbol", "symbol", "text-left")}
                     {sortTh("Qty", "quantity", "text-right")}
                     {sortTh("Avg Cost", "avg_cost", "text-right")}
                     {sortTh("Price", "current_price", "text-right")}
                     {sortTh("Mkt Value", "market_value", "text-right")}
                     {sortTh("Unrealized P&L", "unrealized_pnl", "text-right")}
+                    {sortTh("Total P&L", "total_pnl", "text-right")}
                     {sortTh("% of Portfolio", "position_pct", "text-right")}
                   </tr>
                 </thead>
@@ -568,7 +591,7 @@ export default function Cockpit() {
                   {sortedPositions.map((pos) => (
                     <tr
                       key={pos.id}
-                      className="tableRow"
+                      className={`tableRow ${topWeightedSymbols.has(pos.symbol) ? "bg-accent-blue/5" : ""}`}
                     >
                       <td className="tableCell font-medium">
                         {pos.symbol}
@@ -594,6 +617,13 @@ export default function Cockpit() {
                       >
                         {formatMoney(pos.unrealized_pnl)}
                       </td>
+                      <td
+                        className={`tableCellNumeric ${
+                          (pos.total_pnl ?? 0) >= 0 ? "value-up" : "value-down"
+                        }`}
+                      >
+                        {formatMoney(pos.total_pnl)}
+                      </td>
                       <td className="tableCellNumeric text-text-secondary">
                         {formatPercent(pos.position_pct)}
                       </td>
@@ -601,7 +631,7 @@ export default function Cockpit() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t border-surface-border font-medium text-text-primary">
+                  <tr className="border-t-2 border-surface-border bg-surface-hover/60 font-semibold text-text-primary">
                     <td className="py-2.5 pr-4">Total</td>
                     <td className="tableCellNumeric">
                       {formatQuantity(activePositions.reduce((s, p) => s + (p.quantity ?? 0), 0))}
@@ -613,6 +643,9 @@ export default function Cockpit() {
                     </td>
                     <td className="tableCellNumeric">
                       {formatMoney(activePositions.reduce((s, p) => s + (p.unrealized_pnl ?? 0), 0))}
+                    </td>
+                    <td className="tableCellNumeric">
+                      {formatMoney(activePositions.reduce((s, p) => s + (p.total_pnl ?? 0), 0))}
                     </td>
                     <td className="tableCellNumeric">
                       {formatPercent(activePositions.reduce((s, p) => s + (p.position_pct ?? 0), 0))}

@@ -168,7 +168,7 @@ export default function PositionsPage() {
   const [rulesProfile, setRulesProfile] = useState<StrategyProfileResponse | null>(null);
   const [showRunHistory, setShowRunHistory] = useState(false);
 
-  type SortKey = "symbol" | "status" | "quantity" | "avg_cost" | "current_price" | "market_value" | "unrealized_pnl" | "day_pnl" | "stop_level" | "weight";
+  type SortKey = "symbol" | "status" | "quantity" | "avg_cost" | "current_price" | "market_value" | "unrealized_pnl" | "total_pnl" | "day_pnl" | "stop_level" | "weight";
   const [sortKey, setSortKey] = useState<SortKey>("symbol");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -213,6 +213,7 @@ export default function PositionsPage() {
       case "current_price": return pos.current_price ?? 0;
       case "market_value": return (pos.quantity ?? 0) * (pos.current_price ?? 0);
       case "unrealized_pnl": return pos.unrealized_pnl ?? 0;
+      case "total_pnl": return pos.total_pnl ?? 0;
       case "day_pnl": return pos.day_pnl ?? 0;
       case "stop_level": return pos.stop_level ?? 0;
       case "weight": return pos.position_pct ?? 0;
@@ -322,6 +323,7 @@ export default function PositionsPage() {
                     {sortTh("Last Price", "current_price", "text-right")}
                     {sortTh("Mkt Value", "market_value", "text-right")}
                     {sortTh("Unrealized P&amp;L", "unrealized_pnl", "text-right")}
+                    {sortTh("Total P&amp;L", "total_pnl", "text-right")}
                     {sortTh("Day P&amp;L", "day_pnl", "text-right")}
                     {sortTh("Stop", "stop_level", "text-right")}
                     {sortTh("Weight", "weight", "text-right")}
@@ -340,6 +342,9 @@ export default function PositionsPage() {
                         <td className="tableCellNumeric"><PriceDisplay value={(pos.quantity ?? 0) * (pos.current_price ?? 0)} prefix="$" /></td>
                         <td className={`tableCellNumeric ${(pos.unrealized_pnl ?? 0) >= 0 ? "value-up" : "value-down"}`}>
                           <PriceDisplay value={pos.unrealized_pnl} prefix="$" colorize />
+                        </td>
+                        <td className={`tableCellNumeric ${(pos.total_pnl ?? 0) >= 0 ? "value-up" : "value-down"}`}>
+                          <PriceDisplay value={pos.total_pnl} prefix="$" colorize />
                         </td>
                         <td className={`tableCellNumeric ${(pos.day_pnl ?? 0) >= 0 ? "value-up" : "value-down"}`}>
                           <PriceDisplay value={pos.day_pnl} prefix="$" colorize />

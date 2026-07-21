@@ -1,5 +1,6 @@
 """Tests for MoomooBrokerAdapter — read-only phase."""
 import pytest
+import pandas as pd
 from app.services.broker.moomoo import (
     MoomooBrokerAdapter,
     MOOMOO_SDK_AVAILABLE,
@@ -7,7 +8,7 @@ from app.services.broker.moomoo import (
     _from_moomoo_symbol,
     _safe_float,
 )
-from app.services.broker.base import LimitOrderRequest
+from app.services.broker.base import AccountSummary, LimitOrderRequest
 
 
 class TestSymbolMapping:
@@ -97,3 +98,60 @@ class TestReadOnlyReturns:
         assert quote.last is None
         assert quote.bid is None
         assert quote.ask is None
+
+
+@pytest.mark.asyncio
+async def test_position_mapping_uses_moomoo_app_cost_and_pnl_fields(monkeypatch):
+    """Moomoo's cost_price/pl_val are diluted/total P&L, not App fields."""
+    from app.services.broker.moomoo import MoomooBrokerAdapter
+
+    row = {
+        "code": "US.MU",
+        "qty": 4,
+        "average_cost": 1007.282,
+        "cost_price": 1069.35,
+        "nominal_price": 913.09,
+        "market_val": 3652.36,
+        "unrealized_pl": -376.7667,
+        "realized_pl": -248.2733,
+        "pl_val": -625.04,
+        "pl_ratio": -9.35,
+        "today_pl_val": 190.52,
+    }
+
+    class FakeContext:
+        def position_list_query(self, **kwargs):
+            return 0, pd.DataFrame([row])
+
+    adapter = MoomooBrokerAdapter()
+    adapter._connected = True
+    adapter._ctx = FakeContext()
+    monkeypatch.setattr(adapter, "_ensure_account_id", lambda: _account_id())
+
+    async def account():
+        return AccountSummary(
+            total_value=17686.0,
+            cash=0.0,
+            positions_value=3652.36,
+            day_pnl=0.0,
+            day_pnl_pct=0.0,
+            total_pnl=0.0,
+            total_pnl_pct=0.0,
+            drawdown_pct=0.0,
+            buying_power=0.0,
+        )
+
+    async def _account_id():
+        return 1
+
+    monkeypatch.setattr(adapter, "get_account", account)
+    positions = await adapter.get_positions()
+
+    assert len(positions) == 1
+    position = positions[0]
+    assert position.avg_cost == 1007.28
+    assert position.current_price == 913.09
+    assert position.unrealized_pnl == -376.77
+    assert position.realized_pnl == -248.27
+    assert position.total_pnl == -625.04
+    assert position.day_pnl == 190.52

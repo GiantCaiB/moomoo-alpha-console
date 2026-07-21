@@ -12,3 +12,5 @@ class PositionResponse(BaseModel):
     stop_level: float | None
     position_pct: float | None
     status: str
+    realized_pnl: float | None = None
+    total_pnl: float | None = None

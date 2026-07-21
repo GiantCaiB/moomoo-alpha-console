@@ -28,6 +28,8 @@ class PositionDto:
     stop_level: float | None
     position_pct: float | None
     status: str = "OPEN"
+    realized_pnl: float | None = None
+    total_pnl: float | None = None
 
 
 @dataclass

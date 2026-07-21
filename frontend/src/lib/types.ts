@@ -46,6 +46,8 @@ export interface PositionResponse {
   stop_level: number | null;
   position_pct: number | null;
   status: string;
+  realized_pnl: number | null;
+  total_pnl: number | null;
 }
 
 export interface OrderResponse {

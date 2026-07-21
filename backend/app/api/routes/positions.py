@@ -21,4 +21,6 @@ async def list_positions(broker: BrokerAdapter = Depends(get_broker)):
         stop_level=p.stop_level,
         position_pct=p.position_pct,
         status=p.status,
+        realized_pnl=p.realized_pnl,
+        total_pnl=p.total_pnl,
     ) for p in positions]

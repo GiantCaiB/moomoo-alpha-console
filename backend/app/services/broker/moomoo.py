@@ -345,11 +345,15 @@ class MoomooBrokerAdapter:
                 symbol = _from_moomoo_symbol(str(_series_get(p, "code", "")))
                 # Moomoo can return fractional shares, especially for rewards.
                 qty = _safe_float(_series_get(p, "qty"))
-                cost = _safe_float(_series_get(p, "cost_price"))
+                # Moomoo exposes both average_cost and diluted/cost_price.
+                # The App's Average Cost and P/L use average_cost.
+                cost = _safe_float(_series_get(p, "average_cost", _series_get(p, "cost_price")))
                 price = _safe_float(_series_get(p, "nominal_price"))
                 market_val = _safe_float(_series_get(p, "market_val"))
-                pl_val = _safe_float(_series_get(p, "pl_val"))
-                pl_ratio = _safe_float(_series_get(p, "pl_ratio"))
+                unrealized_pl = _safe_float(_series_get(p, "unrealized_pl"))
+                realized_pl = _safe_float(_series_get(p, "realized_pl"))
+                total_pl = _safe_float(_series_get(p, "pl_val"))
+                today_pl = _safe_float(_series_get(p, "today_pl_val"))
 
                 total_val = _safe_float((await self.get_account()).total_value)
                 pct = round(market_val / total_val * 100, 2) if total_val > 0 else 0.0
@@ -359,10 +363,12 @@ class MoomooBrokerAdapter:
                     quantity=round(qty, 6),
                     avg_cost=round(cost, 2),
                     current_price=round(price, 2) if price else None,
-                    unrealized_pnl=round(pl_val, 2),
-                    day_pnl=round(pl_ratio, 2) if pl_ratio else None,
+                    unrealized_pnl=round(unrealized_pl, 2),
+                    day_pnl=round(today_pl, 2),
                     stop_level=None,
                     position_pct=pct,
+                    realized_pnl=round(realized_pl, 2),
+                    total_pnl=round(total_pl, 2),
                 ))
             return positions
         except Exception as e:
